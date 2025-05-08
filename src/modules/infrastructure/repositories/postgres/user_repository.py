@@ -44,7 +44,8 @@ class UserPostgresRepository(UserRepository):
 
     def get_user_by_id(self, id: str)->BankAccount|None:
         valid_user = self._session.query(UserSchema).filter(UserSchema.cust_id == id).first()
-        return None if not valid_user else BankAccount
+        if valid_user:
+            return BankAccount
 
 
     def add_balance(self, model: Amount, id:str)->Account:

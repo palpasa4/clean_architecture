@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pydantic import SecretStr
 from src.entrypoints.api.admin.models import AdminLoginModel
+from src.entrypoints.api.admin.responses import *
 from src.modules.domain.admin.entity import Admin
 from sqlalchemy.orm import Session
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
@@ -19,3 +20,12 @@ class AdminRepository(ABC):
 
     @abstractmethod 
     def get_admin_by_id(self, id:str)-> AdminSchema|None:...
+
+    @abstractmethod
+    def get_details(self) -> list | None:...
+
+    @abstractmethod
+    def get_specific_user_detail(self, id: str)  -> AdminViewDetails | None:...
+
+    @abstractmethod
+    def get_transactions(self, id:str) -> list[AdminTransactionDetails]:...

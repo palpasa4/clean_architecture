@@ -1,5 +1,6 @@
 import uuid
 from src.entrypoints.api import admin, user
+from src.entrypoints.api.admin.responses import AdminViewDetails
 from src.modules.domain.admin.repository import AdminRepository
 from sqlalchemy.orm import Session
 from src.entrypoints.api.admin.models import *
@@ -51,9 +52,35 @@ class AdminService():
             return admin
 
 
-    def check_ifadmin(self, id: str):
+    def check_ifadmin(self, id: str) -> None:
         if not self.admin_repository.get_admin_by_id(id):
             logger.error(f"Unauthorized access attempt by user with userid: {id}")
             raise UserPermissionDeniedException(
                 message="User not allowed.", status_code=401
             ) 
+
+
+    def admin_view_details(self, id:str) -> list[AdminViewDetails]:
+        users_list = self.admin_repository.get_details()
+        if not users_list:
+            logger.error("Database Exception: No details found!")
+            raise DetailNotFoundException(message="No details found!", status_code=404)
+        return users_list
+
+
+    def admin_view_specific_detail(self, id: str) -> AdminViewDetails:
+        users_detail = self.admin_repository.get_specific_user_detail(id)
+        if not users_detail:
+            logger.error("Database Exception: No details found!")
+            raise DetailNotFoundException(message="No details found!", status_code=404)
+        return users_detail
+    
+
+    def admin_view_transactions(self, id:str):
+        transaction_list = self.admin_repository.get_transactions(id)
+        if not transaction_list:
+            logger.error("Database Error: No transactions found. ")
+            raise TransactionsNotFoundException(
+                message="No transactions found!", status_code=404
+            )
+        return transaction_list
