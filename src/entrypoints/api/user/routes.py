@@ -52,3 +52,65 @@ async def user_login(
     token = sign_jwt(str(user.cust_id), settings)
     logger.info(f"User login successful for username: {model.username}")
     return {"access_token":token}
+
+
+# user: deposit
+@router.post("/deposit/", tags=["user_deposit"], status_code=200)
+def deposit_amount(
+    model: Amount, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
+):
+    user_repo = UserPostgresRepository(db)
+    userservice= UserService(user_repo)
+    userservice.check_ifuser(id)
+    account = userservice.deposit(model, id)
+    logger.info(
+        f"Amount of {model.amount} deposited to bank account {account.bank_acc_id}"
+    )
+    return {
+        "message": f"Amount of {model.amount} successfully deposited to Bank Account {account.bank_acc_id}",
+        "Deposited amount": model.amount,
+        "Previous Balance": account.balance - model.amount,
+        "New Balance": account.balance,
+    }
+
+
+# user: withdraw
+@router.post("/withdraw/")
+def withdraw_amount(
+    model: Amount, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
+):
+    user_repo = UserPostgresRepository(db)
+    userservice= UserService(user_repo)
+    userservice.check_ifuser(id)
+    account = userservice.withdraw(model, id)
+    logger.info(
+        f"Amount of {model.amount} withdrawn from bank account {account.bank_acc_id}"
+    )
+    return {
+        "message": f"Amount of {model.amount} successfully withdrawn from Bank Account {account.bank_acc_id}",
+        "Deposited amount": model.amount,
+        "Previous Balance": account.balance + model.amount,
+        "New Balance": account.balance,
+    }
+
+
+# view details
+@router.get("/details/")
+def view_details(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
+    user_repo = UserPostgresRepository(db)
+    userservice= UserService(user_repo)
+    userservice.check_ifuser(id)
+    details = userservice.user_view_details(id)
+    return {"details": details}
+
+
+# view transactions
+@router.get("/transactions/")
+def view_transactions(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
+    user_repo = UserPostgresRepository(db)
+    userservice= UserService(user_repo)
+    userservice.check_ifuser(id)
+    transactions = userservice.user_view_transactions(id)
+    return {
+        "transactions": transactions
+    }

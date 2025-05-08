@@ -3,6 +3,7 @@ from pydantic import SecretStr
 from src.entrypoints.api.admin.models import AdminLoginModel
 from src.modules.domain.admin.entity import Admin
 from sqlalchemy.orm import Session
+from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 
 
 class AdminRepository(ABC):
@@ -17,4 +18,4 @@ class AdminRepository(ABC):
     def get_admin_by_username(self, model: AdminLoginModel) -> Admin: ...
 
     @abstractmethod 
-    def get_admin_by_id(self, id:str)-> bool:...
+    def get_admin_by_id(self, id:str)-> AdminSchema|None:...

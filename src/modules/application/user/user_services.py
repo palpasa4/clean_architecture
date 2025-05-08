@@ -1,5 +1,6 @@
 import hashlib, uuid
-from src.entrypoints.api.user.models import CreateUserModel
+from src.entrypoints.api.user.models import *
+from src.entrypoints.api.user.responses import *
 from src.modules.domain.user.entity import Account, User
 from src.modules.domain.user.repository import UserRepository
 from src.modules.infrastructure.auth.password_utils import hash_password
@@ -19,7 +20,7 @@ class UserService():
     def check_duplicate_user(self, username:str):
         user = self.user_repository.get_user(username)
         if user:
-            logger.error("Admin attempted to create a user with an existing username")
+            logger.error(f"Duplicate user creation attempt: username= {username}")
             raise DuplicateUserException(
                 message=f"User with username {username} already exists.", status_code=409
             )
@@ -99,3 +100,83 @@ class UserService():
             )
         return user
     
+
+    def check_ifuser(self, id: str):
+        if not self.user_repository.get_user_by_id(id):
+            logger.error(f"Unauthorized access attempt by user with userid: {id}")
+            raise UserPermissionDeniedException(
+                message="User not allowed.", status_code=401
+            ) 
+        
+
+    def deposit(self, model: Amount, id: str):
+        if model.amount < 500:
+            logger.error(
+                "DepositBalanceException: Trying to deposit less than minimum amount!"
+            )
+            raise ValidationException(
+                message="Minimum amount of deposit is 500!", status_code=400
+            )
+        try:
+            account = self.user_repository.add_balance(model, id)
+            return account
+        except Exception as e:
+            logger.error(f"Database error: Unable to deposit amount for user with ID: {id}")
+            raise DatabaseException(
+                message="Database error: Unable to deposit money.", status_code=500
+            )
+        
+    
+    def withdraw(self, model: Amount, id: str):
+        bank_acc= self.user_repository.get_account(id)
+        if model.amount < 500:
+            logger.error(
+                "WithdrawBalanceException: Trying to withdraw less than minimum amount!"
+            )
+            raise ValidationException(
+                message="Minimum amount of withdrawal is 500!", status_code=400
+            )
+        if (
+            bank_acc
+            and isinstance(bank_acc.balance, (float))
+            and float(bank_acc.balance) - 500 < model.amount
+        ):
+            logger.error(
+                "WithdrawBalanceException: Trying to withdraw more than existing balance!"
+            )
+            raise ValidationException(
+                message=f"Withdrawal exceeds existing balance. Minimum existing balance should be NPR 500 Existing balance is : {bank_acc.balance}",
+                status_code=400,
+            )
+        try:
+            account = self.user_repository.deduct_balance(model, id)
+            return account
+        except Exception as e:
+            logger.error(
+                f"Database error: Unable to withdraw amount for user with ID: {id}"
+            )
+            raise DatabaseException(
+                message="Database error: Unable to withdraw money.", status_code=500
+            )
+       
+
+    def user_view_details(self, id) -> UserViewDetails:
+        details = self.user_repository.get_detail(id)
+        if not details:
+            logger.error(
+                f"DatabaseException raised: Detail Not Found for user with ID: {id}."
+            )
+            raise DetailNotFoundException(message="Detail Not found.", status_code=404)
+        return details
+    
+
+    def user_view_transactions(self, id: str)-> list:
+        transactions = self.user_repository.get_transactions(id)
+        if not transactions:
+            logger.error(
+                f"DatabaseException: No transactions found for user with ID: {id}."
+            )
+            raise TransactionsNotFoundException(
+                message="No transactions found.", status_code=404
+            )
+        return transactions

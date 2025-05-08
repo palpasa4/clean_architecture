@@ -17,7 +17,7 @@ class AdminPostgresRepository(AdminRepository):
         self._session.commit()
 
 
-    def check_duplicate_admin(self, entity: Admin) -> Admin|None:
+    def check_duplicate_admin(self, entity: Admin) -> Admin | None:
         admin = self._session.query(AdminSchema).filter(AdminSchema.username== entity.username).first()
         if admin: 
             return admin
@@ -28,6 +28,6 @@ class AdminPostgresRepository(AdminRepository):
         return admin
 
 
-    def get_admin_by_id(self, id: str):
+    def get_admin_by_id(self, id: str) -> AdminSchema | None:
         valid_admin = self._session.query(AdminSchema).filter(AdminSchema.admin_id == id).first()
-        return True if valid_admin else False
+        return None if not valid_admin else valid_admin

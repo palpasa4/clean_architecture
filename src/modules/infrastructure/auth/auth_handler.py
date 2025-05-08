@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-import time, jwt
+import time,jwt
 from typing import Dict, Optional
 from src.modules.infrastructure.persistence.settings import DefaultSettings
 
