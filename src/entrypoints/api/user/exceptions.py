@@ -1,0 +1,16 @@
+from src.entrypoints.api.handlers.exceptions import *
+
+
+class DuplicateUserException(DuplicateResourceException): ...
+
+
+class InvalidUserLoginException(AuthException): ...
+
+
+class UserPermissionDeniedException(PermissionDeniedException): ...
+
+
+class DetailNotFoundException(ResourceNotFoundException): ...
+
+
+class TransactionsNotFoundException(ResourceNotFoundException): ...
