@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from src.modules.infrastructure.persistence.database import Base
 
 
+
 class UserSchema(Base):
     __tablename__ = "user_data"
 
@@ -14,7 +15,7 @@ class UserSchema(Base):
     role = Column(String, index=True)
 
 
-class BankAccount(Base):
+class BankAccountSchema(Base):
     __tablename__ = "bank_acc"
 
     bank_acc_id = Column(String, primary_key=True, index=True)
@@ -27,7 +28,7 @@ class BankAccount(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now())
 
 
-class Transactions(Base):
+class TransactionsSchema(Base):
     __tablename__ = "transaction_history"
 
     transaction_id = Column(String, primary_key=True, index=True)

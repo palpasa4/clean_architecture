@@ -11,5 +11,7 @@ class AdminSchema(Base):
     admin_id = Column(String, primary_key=True)
     username = Column(String, index=True)
     password = Column(String, index=True)
+    fullname = Column(String, index=True)
+    email = Column(String, index= True)
     role = Column(String, index=True)
     

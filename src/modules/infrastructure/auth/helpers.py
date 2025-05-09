@@ -1,9 +1,9 @@
 import time, jwt, bcrypt
-from src.dbschemas.user import UserSchema
-from src.dbschemas.admin import AdminSchema
+from src.modules.infrastructure.persistence.dbschemas.user import UserSchema
+from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
-from src.api.dependencies import get_db_session
+from src.modules.infrastructure.persistence.database import get_db_session
 
 
 # For successful login

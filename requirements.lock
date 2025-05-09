@@ -28,6 +28,10 @@ click==8.1.8
 colorama==0.4.6
     # via click
     # via uvicorn
+dnspython==2.7.0
+    # via email-validator
+email-validator==2.2.0
+    # via pydantic
 fastapi==0.115.12
     # via bank-sys-cleanarch
 fastapi-cli==0.0.7
@@ -45,6 +49,7 @@ httpx==0.28.1
     # via bank-sys-cleanarch
 idna==3.10
     # via anyio
+    # via email-validator
     # via httpx
 markdown-it-py==3.0.0
     # via rich
@@ -53,6 +58,7 @@ mdurl==0.1.2
 psycopg2-binary==2.9.10
     # via bank-sys-cleanarch
 pydantic==2.11.4
+    # via bank-sys-cleanarch
     # via fastapi
     # via pydantic-settings
 pydantic-core==2.33.2

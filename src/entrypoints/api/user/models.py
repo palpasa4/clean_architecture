@@ -14,5 +14,5 @@ class UserLoginModel(BaseModel):
     password: SecretStr
 
 
-class Amount(BaseModel):
+class AmountModel(BaseModel):
     amount: float

@@ -1,5 +1,5 @@
 import uuid
-from src.modules.application.admin.admin_services import AdminService
+from src.modules.application.admin_services import AdminService
 from sqlalchemy.orm import Session
 from src.modules.infrastructure.persistence.database import get_db_session
 from src.modules.infrastructure.repositories.postgres.admin_repository import AdminPostgresRepository

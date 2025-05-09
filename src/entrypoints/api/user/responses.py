@@ -2,13 +2,17 @@ from pydantic import BaseModel,SecretStr
 from datetime import datetime
 
 
-class UserResponse(BaseModel):
+class UserResponseModel(BaseModel):
     message: str
     id: str
     password: str
 
 
-class UserViewDetails(BaseModel):
+class TokenResponseModel(BaseModel):
+    access_token: str
+
+    
+class UserViewDetailsModel(BaseModel):
     cust_id: str
     username: str
     bank_acc_id: str
@@ -19,7 +23,7 @@ class UserViewDetails(BaseModel):
     updated_at: datetime
 
 
-class UserTransactionDetails(BaseModel):
+class UserTransactionDetailsModel(BaseModel):
     transaction_id: str
     bank_acc_id: str
     transaction_type: str

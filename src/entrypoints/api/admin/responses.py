@@ -3,13 +3,14 @@ from email import message
 from pydantic import BaseModel, SecretStr
 
 
-class TokenResponse(BaseModel):
+class TokenResponseModel(BaseModel):
     access_token: str
 
 
-class AdminViewDetails(BaseModel):
+class AdminViewDetailsModel(BaseModel):
     cust_id: str
     username: str
+    bank_acc_id: str
     fullname: str
     address: str
     contact_no: str
@@ -17,7 +18,7 @@ class AdminViewDetails(BaseModel):
     updated_at: datetime
 
 
-class AdminTransactionDetails(BaseModel):
+class AdminTransactionDetailsModel(BaseModel):
     transaction_id: str
     bank_acc_id: str
     transaction_type: str

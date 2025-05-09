@@ -1,9 +1,11 @@
 from sqlalchemy import select
 from src.entrypoints.api.admin.responses import *
+from src.entrypoints.api.mappers.admin_mapper import orm_to_admin_entity
 from src.modules.domain.admin.repository import AdminRepository
 from sqlalchemy.orm import Session
+from src.modules.domain.user.entity import BankAccount
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
-from src.modules.domain.admin.entity import Admin
+from src.modules.domain.admin.entity import *
 from src.entrypoints.api.admin.models import AdminLoginModel
 from src.modules.infrastructure.persistence.dbschemas.user import *
 
@@ -15,7 +17,7 @@ class AdminPostgresRepository(AdminRepository):
 
 
     def create_admin(self, entity: Admin):
-        user= AdminSchema(admin_id=entity.admin_id, username=entity.username, password=entity.password, role=entity.role)
+        user= AdminSchema(admin_id=entity.admin_id, username=entity.username, password=entity.password, fullname=entity.fullname, email=entity.email ,role=entity.role)
         self._session.add(user)
         self._session.commit()
 
@@ -23,32 +25,42 @@ class AdminPostgresRepository(AdminRepository):
     def check_duplicate_admin(self, entity: Admin) -> Admin | None:
         admin = self._session.query(AdminSchema).filter(AdminSchema.username== entity.username).first()
         if admin: 
-            return admin
+            admin_entity= orm_to_admin_entity(admin.__dict__)
+            return admin_entity
 
 
-    def get_admin_by_username(self, model: AdminLoginModel) -> Admin: 
+    def get_admin_by_username(self, model: AdminLoginModel) -> Admin | None: 
         admin = self._session.query(AdminSchema).filter_by(username=model.username).first()
-        return admin
+        if admin: 
+            admin_entity= orm_to_admin_entity(admin.__dict__)
+            return admin_entity
 
 
-    def get_admin_by_id(self, id: str) -> AdminSchema | None:
+    def get_admin_by_id(self, id: str) -> Admin | None:
         valid_admin = self._session.query(AdminSchema).filter(AdminSchema.admin_id == id).first()
         if valid_admin:
-            return valid_admin
+            admin_entity= orm_to_admin_entity(valid_admin.__dict__)
+            return admin_entity
 
 
-    def get_details(self) -> list | None:
+    def get_bank_acc(self, id: str) -> BankAccount |None:
+        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == id).first()
+        if account:
+            return account
+        
+        
+    def get_details(self) -> list[AdminViewDetails] | None:
         details = self._session.execute(
             select(
                 UserSchema.cust_id,
                 UserSchema.username,
-                BankAccount.bank_acc_id,
-                BankAccount.fullname,
-                BankAccount.address,
-                BankAccount.contact_no,
-                BankAccount.created_at,
-                BankAccount.updated_at,
-            ).outerjoin(BankAccount, UserSchema.cust_id == BankAccount.cust_id)
+                BankAccountSchema.bank_acc_id,
+                BankAccountSchema.fullname,
+                BankAccountSchema.address,
+                BankAccountSchema.contact_no,
+                BankAccountSchema.created_at,
+                BankAccountSchema.updated_at,
+            ).outerjoin(BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id)
         ).fetchall()
         users_list = [AdminViewDetails(**dict(detail._mapping)) for detail in details]
         return users_list
@@ -59,29 +71,29 @@ class AdminPostgresRepository(AdminRepository):
             select(
                 UserSchema.cust_id,
                 UserSchema.username,
-                BankAccount.bank_acc_id,
-                BankAccount.fullname,
-                BankAccount.address,
-                BankAccount.contact_no,
-                BankAccount.created_at,
-                BankAccount.updated_at,
+                BankAccountSchema.bank_acc_id,
+                BankAccountSchema.fullname,
+                BankAccountSchema.address,
+                BankAccountSchema.contact_no,
+                BankAccountSchema.created_at,
+                BankAccountSchema.updated_at,
             )
-            .outerjoin(BankAccount, UserSchema.cust_id == BankAccount.cust_id)
+            .outerjoin(BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id)
             .where(UserSchema.cust_id == id)
         ).first()
         if details:
             return AdminViewDetails(**dict(details._mapping))
 
 
-    def get_transactions(self, id:str) -> list[AdminTransactionDetails]:
+    def get_transactions(self) -> list[AdminTransactionDetails]:
         transactions = (
             self._session.execute(
                 select(
-                    Transactions.transaction_id,
-                    Transactions.bank_acc_id,
-                    Transactions.transaction_type,
-                    Transactions.amount,
-                    Transactions.timestamp,
+                    TransactionsSchema.transaction_id,
+                    TransactionsSchema.bank_acc_id,
+                    TransactionsSchema.transaction_type,
+                    TransactionsSchema.amount,
+                    TransactionsSchema.timestamp,
                 )
             )
             .mappings()
@@ -91,3 +103,24 @@ class AdminPostgresRepository(AdminRepository):
             AdminTransactionDetails(**transaction) for transaction in transactions
         ]
         return transaction_list
+    
+
+    def get_specific_transactions(self, bank_acc_id: str) -> list[AdminTransactionDetails] | None:
+        stmt = select(
+            TransactionsSchema.transaction_id,
+            TransactionsSchema.bank_acc_id,
+            TransactionsSchema.transaction_type,
+            TransactionsSchema.amount,
+            TransactionsSchema.timestamp,
+        ).where(TransactionsSchema.bank_acc_id == bank_acc_id)
+
+        transactions = (
+            self._session.execute(stmt)
+            .mappings()
+            .all()
+        )
+        if transactions:
+            transaction_list = [
+                AdminTransactionDetails(**transaction) for transaction in transactions
+            ]
+            return transaction_list

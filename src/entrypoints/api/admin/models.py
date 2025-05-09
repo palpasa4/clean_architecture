@@ -1,12 +1,14 @@
 from pydantic.main import BaseModel
-from pydantic import SecretStr
+from pydantic import EmailStr, SecretStr
 from pydantic.main import BaseModel
 
 
 class CreateAdminModel(BaseModel):
     username: str
     password: str
-
+    fullname: str
+    email: EmailStr
+    
     
 class AdminLoginModel(BaseModel):
     username: str 
@@ -19,6 +21,6 @@ class ListUserParams(BaseModel):
     user_id: str | None = None
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+# class Token(BaseModel):
+#     access_token: str
+#     token_type: str

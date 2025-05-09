@@ -1,7 +1,7 @@
 import hashlib, uuid
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
-from src.modules.domain.user.entity import Account, User
+from src.modules.domain.user.entity import BankAccount, BankAccount, User
 from src.modules.domain.user.repository import UserRepository
 from src.modules.infrastructure.auth.password_utils import hash_password
 from src.modules.infrastructure.logging.logconfig import logger
@@ -17,7 +17,7 @@ class UserService():
         self.user_repository = user_repository
 
 
-    def check_duplicate_user(self, username:str):
+    def check_duplicate_user(self, username:str) -> None:
         user = self.user_repository.get_user(username)
         if user:
             logger.error(f"Duplicate user creation attempt: username= {username}")
@@ -26,19 +26,19 @@ class UserService():
             )
 
 
-    def check_user_details(self, model: CreateUserModel):
-        if len(model.username) < 7:
+    def check_user_details(self, entity: User) -> None:
+        if len(entity.username) < 7:
             # simple input validation issue
             logger.warning("Username too short: must be at least 7 characters long")
             raise ValidationException(
                 message="Username must be at least 7 characters long!", status_code=400
             )
-        if len(model.username) > 20:
+        if len(entity.username) > 20:
             logger.warning("Username too long: cannot be more than 20 characters!")
             raise ValidationException(
                 message="Username cannot include more than 20 characters!", status_code=400
             )
-        if model.opening_balance < 500:
+        if entity.opening_balance < 500:
             # business rule violation
             logger.error(
                 "Bank account creation failed: opening balance below minimum requirement"
@@ -48,41 +48,30 @@ class UserService():
             )
 
 
-    def create_user_handler(self, model: CreateUserModel) -> list:
+    def create_user_handler(self, user_entity: User) -> User:
+        self.check_duplicate_user(user_entity.username)
+        self.check_user_details(user_entity)
         try:
-            new_cust_id = f"CUST-{str(uuid.uuid4())[:8]}"
-            password = hashlib.sha256(model.username.encode()).hexdigest()[:12]
-            hashed_pw = hash_password(password)
-            user_entity = User(
-                cust_id=new_cust_id,
-                username=model.username,
-                password=hashed_pw,
-                role="user"
-            )
             self.user_repository.add_user(user_entity)
-            self.create_bank_acc(model, new_cust_id)
-            return [new_cust_id, password]
+            self.create_bank_acc(user_entity)
+            return user_entity
         except Exception as e:
             logger.error(
-                f"Database error: Unable to add user '{model.username}' to table 'user_data'.Error: {str(e)}"
+                f"Database error: Unable to add user '{user_entity.username}' to table 'user_data'.Error: {str(e)}"
             )
             raise DatabaseException("Database error: Unable to add user.", status_code=500)
 
 
-    def create_bank_acc(self, model: CreateUserModel, new_cust_id: str):
+    def create_bank_acc(self, user_entity: User):
         try:
-            new_bankid = f"ACC-{str(uuid.uuid4())[:8]}"
-            account_entity=Account(
-                bank_acc_id= new_bankid,
-                fullname= model.fullname,
-                address= model.address,
-                contact_no= model.contact_no,
-                balance=model.opening_balance
+            account_entity=BankAccount(
+                bank_acc_id= f"ACC-{str(uuid.uuid4())[:8]}",
+                balance=user_entity.opening_balance
             )
-            self.user_repository.add_account(account_entity, new_cust_id)
+            self.user_repository.add_account(user_entity, account_entity)
         except Exception as e:
             logger.error(
-                f"Database error: Unable to create bank_acc for '{model.username}'.Error: {str(e)}"
+                f"Database error: Unable to create bank_acc for '{user_entity.username}'.Error: {str(e)}"
             )
             raise DatabaseException(
                 "Database error: Unable to create bank account.", status_code=500
@@ -109,7 +98,7 @@ class UserService():
             ) 
         
 
-    def deposit(self, model: Amount, id: str):
+    def deposit(self, model: AmountModel, id: str):
         if model.amount < 500:
             logger.error(
                 "DepositBalanceException: Trying to deposit less than minimum amount!"
@@ -127,7 +116,7 @@ class UserService():
             )
         
     
-    def withdraw(self, model: Amount, id: str):
+    def withdraw(self, model: AmountModel, id: str):
         bank_acc= self.user_repository.get_account(id)
         if model.amount < 500:
             logger.error(
@@ -160,7 +149,7 @@ class UserService():
             )
        
 
-    def user_view_details(self, id) -> UserViewDetails:
+    def user_view_details(self, id) -> UserViewDetailsModel:
         details = self.user_repository.get_detail(id)
         if not details:
             logger.error(
