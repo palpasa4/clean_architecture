@@ -1,5 +1,5 @@
 from fastapi import APIRouter,Request, Depends
-from src.entrypoints.api.mappers.user_mapper import model_to_user_entity
+from src.entrypoints.api.mappers.user_mapper import model_to_transaction_entity, model_to_user_entity
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
 from src.entrypoints.api.dependencies import get_admin_service, get_user_service,AnnotatedDatabaseSession, AnnotatedDefaultSettings
@@ -39,76 +39,79 @@ def create_user_resource(
 
 # user login
 @router.post("/login/", response_model=TokenResponseModel, tags=["user_login"], status_code=200)
-async def user_login(
+def user_login(
     model: UserLoginModel,
     settings: AnnotatedDefaultSettings,
     db: AnnotatedDatabaseSession,
 ):
-    user_repo = UserPostgresRepository(db)
-    userservice= UserService(user_repo)
+    userservice= get_user_service(db)
     user=userservice.check_valid_user(model)
     token = sign_jwt(str(user.cust_id), settings)
-    logger.info(f"User login successful for username: {model.username}")
+    logger.info(f"Login successful for user with username '{user.username}'")
     return TokenResponseModel(access_token=token)
 
 
 # user: deposit
-@router.post("/deposit/", tags=["user_deposit"], status_code=200)
+@router.post("/deposit/", response_model=TransactionResponse, tags=["user_deposit"], status_code=200)
 def deposit_amount(
     model: AmountModel, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
 ):
-    user_repo = UserPostgresRepository(db)
-    userservice= UserService(user_repo)
+    userservice= get_user_service(db)
     userservice.check_ifuser(id)
-    account = userservice.deposit(model, id)
-    logger.info(
-        f"Amount of {model.amount} deposited to bank account {account.bank_acc_id}"
-    )
-    return {
-        "message": f"Amount of {model.amount} successfully deposited to Bank Account {account.bank_acc_id}",
-        "Deposited amount": model.amount,
-        "Previous Balance": account.balance - model.amount,
-        "New Balance": account.balance,
-    }
+    transaction_entity = model_to_transaction_entity(model, id)
+    account = userservice.deposit(transaction_entity)
+    if account:
+        logger.info(
+            f"Amount of {model.amount} deposited to bank account {account.bank_acc_id}"
+        )
+        return TransactionResponse(
+            message= f"Successfully deposited to Bank Account {account.bank_acc_id}",
+            transaction_type= "Deposit",
+            transaction_amount= model.amount,
+            previous_balance= account.balance - model.amount,
+            new_balance= account.balance
+        )
 
 
 # user: withdraw
-@router.post("/withdraw/")
+@router.post("/withdraw/", response_model=TransactionResponse, tags=["user_deposit"], status_code=200)
 def withdraw_amount(
     model: AmountModel, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
 ):
-    user_repo = UserPostgresRepository(db)
-    userservice= UserService(user_repo)
+    userservice= get_user_service(db)
     userservice.check_ifuser(id)
-    account = userservice.withdraw(model, id)
-    logger.info(
-        f"Amount of {model.amount} withdrawn from bank account {account.bank_acc_id}"
-    )
-    return {
-        "message": f"Amount of {model.amount} successfully withdrawn from Bank Account {account.bank_acc_id}",
-        "Deposited amount": model.amount,
-        "Previous Balance": account.balance + model.amount,
-        "New Balance": account.balance,
-    }
+    transaction_entity = model_to_transaction_entity(model, id)
+    account_entity = userservice.withdraw(transaction_entity)
+    if account_entity:
+        logger.info(
+            f"Amount of {model.amount} withdrawn from bank account {account_entity.bank_acc_id}"
+        )
+        return TransactionResponse(
+            message= f"Successfully withdrawn from Bank Account {account_entity.bank_acc_id}",
+            transaction_type= "Withdrawal",
+            transaction_amount= transaction_entity.amount,
+            previous_balance= account_entity.balance + model.amount,
+            new_balance= account_entity.balance
+        )
 
 
 # view details
-@router.get("/details/")
+@router.get("/details/", response_model=UserViewDetailsModel ,tags=["user_view_details"], status_code=200)
 def view_details(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
-    user_repo = UserPostgresRepository(db)
-    userservice= UserService(user_repo)
+    userservice= get_user_service(db)
     userservice.check_ifuser(id)
     details = userservice.user_view_details(id)
-    return {"details": details}
+    response = UserViewDetailsModel(**vars(details))
+    logger.info(f"User details viewed by customer with ID: {id}.")
+    return response
 
 
 # view transactions
-@router.get("/transactions/")
+@router.get("/transactions/", response_model=list[UserTransactionDetailsModel] ,tags=["user_view_transactions"], status_code=200)
 def view_transactions(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
-    user_repo = UserPostgresRepository(db)
-    userservice= UserService(user_repo)
+    userservice= get_user_service(db)
     userservice.check_ifuser(id)
     transactions = userservice.user_view_transactions(id)
-    return {
-        "transactions": transactions
-    }
+    response = [UserTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
+    logger.info(f"Transaction details viewed by customer with ID: {id}")
+    return response

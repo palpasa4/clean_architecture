@@ -12,7 +12,7 @@ from src.entrypoints.api.handlers.middleware import CustomExceptionMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.settings = AppSettings() 
+    app.state.settings = AppSettings() #type:ignore
     print("Starting Server")
     init_db(app.state.settings.database)
     yield

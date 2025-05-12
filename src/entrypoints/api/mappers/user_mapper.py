@@ -1,7 +1,8 @@
 import hashlib, uuid
-from src.entrypoints.api.user.models import CreateUserModel
-from src.modules.domain.user.entity import User
+from src.entrypoints.api.user.models import AmountModel, CreateUserModel
+from src.modules.domain.user.entity import BankAccount, Transactions, User
 from src.modules.infrastructure.auth.password_utils import hash_password
+from src.modules.infrastructure.persistence.dbschemas.user import BankAccountSchema
 
 
 def model_to_user_entity(model: CreateUserModel) -> User:
@@ -20,10 +21,29 @@ def model_to_user_entity(model: CreateUserModel) -> User:
     )
 
 
-# def orm_to_user_entity(data : dict) -> User:
-#     return User(
-#         cust_id= data["cust_id"],
-#         username= data["username"],
-#         password= data["password"],
-#         role = data["role"]
-#     )
+def model_to_transaction_entity(model: AmountModel, id: str) -> Transactions: 
+    return Transactions(
+        cust_id= id,
+        amount= model.amount
+    )
+
+
+def orm_to_user_entity(data: dict) -> User:
+    return User(
+        cust_id=data["cust_id"],
+        username=data["username"],
+        password=data.get("password", ""),              
+        hashed_pw=data.get("hashed_pw", ""),
+        role=data.get("role", "user"),
+        fullname=data.get("fullname", ""),
+        address=data.get("address", ""),
+        contact_no=data.get("contact_no", ""),
+        opening_balance=data.get("opening_balance", 0.0)
+    )
+
+
+def orm_to_bankaccount_entity(account: BankAccountSchema) -> BankAccount:
+    return BankAccount(
+        bank_acc_id= str(account.bank_acc_id),
+        balance= float(account.balance) #type:ignore
+    )

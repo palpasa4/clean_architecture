@@ -11,7 +11,15 @@ class UserResponseModel(BaseModel):
 class TokenResponseModel(BaseModel):
     access_token: str
 
-    
+
+class TransactionResponse(BaseModel):
+    message: str
+    transaction_type: str
+    transaction_amount: float
+    previous_balance: float
+    new_balance: float
+
+
 class UserViewDetailsModel(BaseModel):
     cust_id: str
     username: str

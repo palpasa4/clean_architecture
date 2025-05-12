@@ -28,7 +28,7 @@ class AdminService():
             raise DuplicateAdminException(
             message=f"Admin with username '{admin_entity.username}' already exists.", status_code=409
         )
-        self.admin_repository.create_admin(admin_entity)
+        self.admin_repository.create_admin(admin_entity) #exception handling missing
 
 
     def check_valid_admin(self, model: AdminLoginModel) -> Admin:
@@ -78,15 +78,13 @@ class AdminService():
     
 
     def admin_view_specific_transactions(self, id: str)-> list[AdminTransactionDetails] | None:
-        account = self.admin_repository.get_bank_acc(id)
-        if account:
-            transactions = self.admin_repository.get_specific_transactions(account.bank_acc_id)
-            if not transactions:
-                logger.error(
-                    f"DatabaseException: No transactions found for user with ID: {id}."
-                )
-                raise TransactionsNotFoundException(
-                    message="No transactions found.", status_code=404
-                )
-            return transactions
-        
+        transactions = self.admin_repository.get_specific_transactions(id)
+        if not transactions:
+            logger.error(
+                f"DatabaseException: No transactions found for user with ID: {id}."
+            )
+            raise TransactionsNotFoundException(
+                message="No transactions found.", status_code=404
+            )
+        return transactions
+    

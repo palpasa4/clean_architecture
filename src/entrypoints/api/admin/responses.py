@@ -3,6 +3,10 @@ from email import message
 from pydantic import BaseModel, SecretStr
 
 
+class AdminResponseModel(BaseModel):
+    message: str
+
+
 class TokenResponseModel(BaseModel):
     access_token: str
 

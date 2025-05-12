@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from src.entrypoints.api.admin.responses import *
 from src.entrypoints.api.mappers.admin_mapper import orm_to_admin_entity
+from src.entrypoints.api.mappers.user_mapper import orm_to_bankaccount_entity
 from src.modules.domain.admin.repository import AdminRepository
 from sqlalchemy.orm import Session
 from src.modules.domain.user.entity import BankAccount
@@ -43,10 +44,12 @@ class AdminPostgresRepository(AdminRepository):
             return admin_entity
 
 
-    def get_bank_acc(self, id: str) -> BankAccount |None:
-        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == id).first()
+    def get_bank_acc(self, cust_id: str) -> BankAccount | None:
+        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == cust_id).first()
+        breakpoint()
         if account:
-            return account
+            account_entity = orm_to_bankaccount_entity(account)
+            return account_entity
         
         
     def get_details(self) -> list[AdminViewDetails] | None:
@@ -105,7 +108,10 @@ class AdminPostgresRepository(AdminRepository):
         return transaction_list
     
 
-    def get_specific_transactions(self, bank_acc_id: str) -> list[AdminTransactionDetails] | None:
+    def get_specific_transactions(self, id: str) -> list[AdminTransactionDetails] | None:
+        bank_acc_id = self._session.execute(
+            select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
+        ).scalar()
         stmt = select(
             TransactionsSchema.transaction_id,
             TransactionsSchema.bank_acc_id,
@@ -113,7 +119,6 @@ class AdminPostgresRepository(AdminRepository):
             TransactionsSchema.amount,
             TransactionsSchema.timestamp,
         ).where(TransactionsSchema.bank_acc_id == bank_acc_id)
-
         transactions = (
             self._session.execute(stmt)
             .mappings()
@@ -124,3 +129,4 @@ class AdminPostgresRepository(AdminRepository):
                 AdminTransactionDetails(**transaction) for transaction in transactions
             ]
             return transaction_list
+        

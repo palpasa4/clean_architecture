@@ -16,13 +16,15 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 # create admin
-@router.post("/create-admin", tags=["create_admin"], status_code=200)
+@router.post("/create-admin", response_model=AdminResponseModel , tags=["create_admin"], status_code=200)
 def create_admin(model: CreateAdminModel, db: AnnotatedDatabaseSession):
     adminservice= get_admin_service(db)
     admin_entity = model_to_admin_entity(model)
     adminservice.create_admin_handler(admin_entity)
     logger.info(f"New admin added to table 'admin_data' with username: {model.username}")
-    return {"message": f"Admin with username '{model.username}' created successfully!"}
+    return AdminResponseModel(
+        message=f"Admin with username '{model.username}' created successfully!"
+    )
 
 
 # admin login
@@ -44,7 +46,8 @@ def admin_login(
 # view all or specific user's details
 @router.get("/details/", response_model= list[AdminViewDetailsModel] | AdminViewDetailsModel, tags=["admin_view_details"], status_code=200)
 def view_details(
-    db: AnnotatedDatabaseSession, adminid: str = Depends(JWTBearer()),id: str = Query(default=None)
+    db: AnnotatedDatabaseSession, adminid: str = Depends(JWTBearer()),id: str = Query(default=None),
+    # isadmin: AnnotatedCheckAdmin
 ):
     adminservice= get_admin_service(db)
     adminservice.check_ifadmin(adminid)
@@ -69,7 +72,7 @@ def view_transactions(
     if not id:
         transactions = adminservice.admin_view_transactions()
         response = [AdminTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
-        logger.info(f"Transactions viewed by admin with ID: {id}")
+        logger.info(f"Transactions viewed by admin with ID: {adminid}")
         return response
     transactions=adminservice.admin_view_specific_transactions(id)
     if transactions:

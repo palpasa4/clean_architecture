@@ -17,12 +17,14 @@ class UserPostgresRepository(UserRepository):
         self._session = db
 
 
-    def get_user(self, username: str) -> User | None: 
+    def get_user_by_username(self, username: str) -> User | None: 
         user = self._session.query(UserSchema).filter_by(username=username).first()
-        return user
+        if user:
+            user_entity = orm_to_user_entity(user.__dict__)
+            return user_entity
 
 
-    def add_user(self, entity: User):
+    def add_user(self, entity: User) -> None:
         db_user = UserSchema(
             cust_id=entity.cust_id, username=entity.username, password=entity.hashed_pw, role=entity.role
         )
@@ -30,7 +32,7 @@ class UserPostgresRepository(UserRepository):
         self._session.commit()
 
 
-    def add_account(self, user_entity: User, account_entity: BankAccount):
+    def add_account(self, user_entity: User, account_entity: BankAccount) -> None:
         db_acc= BankAccountSchema(
             bank_acc_id=account_entity.bank_acc_id,
             fullname=user_entity.fullname,
@@ -43,36 +45,40 @@ class UserPostgresRepository(UserRepository):
         self._session.commit()
 
 
-    def get_user_by_id(self, id: str)->BankAccountSchema|None:
+    def get_user_by_id(self, id: str) -> User | None:
         valid_user = self._session.query(UserSchema).filter(UserSchema.cust_id == id).first()
         if valid_user:
-            return BankAccountSchema
+            user_entity = orm_to_user_entity(valid_user.__dict__)
+            return user_entity
 
 
-    def add_balance(self, model: AmountModel, id:str)->BankAccount:
-        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == id).first()
-        if account:
-            account.balance += model.amount #type:ignore
+    def add_balance(self, entity: Transactions) -> BankAccount | None:
+        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == entity.cust_id).first()
+        if account:    
+            account.balance += entity.amount #type:ignore
             account.updated_at = datetime.now()  #type:ignore
             self._session.commit()
-        return account
+            account_entity = orm_to_bankaccount_entity(account)
+            return account_entity
     
 
-    def get_account(self, id: str) -> BankAccountSchema | None:
+    def get_account(self, id: str) -> BankAccount | None:
         bank_acc = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == id).first()
-        return bank_acc if bank_acc is not None else  None
+        if bank_acc:
+            return orm_to_bankaccount_entity(bank_acc)
     
 
-    def deduct_balance(self, model: AmountModel, id: str) -> BankAccountSchema:
-        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == id).first()
+    def deduct_balance(self, entity: Transactions) -> BankAccount | None:
+        account = self._session.query(BankAccountSchema).filter(BankAccountSchema.cust_id == entity.cust_id).first()
         if account:
-            account.balance -= model.amount #type:ignore
+            account.balance -= entity.amount #type: ignore
             account.updated_at = datetime.now() #type: ignore
             self._session.commit()
-        return account
+            account_entity = orm_to_bankaccount_entity(account)
+            return account_entity
 
 
-    def get_detail(self, id:str)-> UserViewDetailsModel | None:
+    def get_detail(self, id:str)-> UserViewDetails | None:
         user_details = self._session.execute(
             select(
                 UserSchema.cust_id,
@@ -87,18 +93,25 @@ class UserPostgresRepository(UserRepository):
             .outerjoin(BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id)
             .where(UserSchema.cust_id == id)
         ).mappings().fetchone() 
-        return UserViewDetailsModel(**user_details) if user_details else None
+        return UserViewDetails(**user_details) if user_details else None
     
 
-    def get_transactions(self, id:str)->list|None:
+    def get_transactions(self, id:str) -> list[UserTransactionDetails] | None:
         bank_acc_id = self._session.execute(
             select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
         ).scalar()
-        transactions = self._session.execute(
-            select(TransactionsSchema).where(TransactionsSchema.bank_acc_id == bank_acc_id)
-        ).fetchall()
-        transactions= [
-            UserTransactionDetailsModel(**transaction[0].__dict__)
-            for transaction in transactions
-        ]
-        return transactions
+        if not bank_acc_id:
+            return None
+        stmt = select(
+            TransactionsSchema.transaction_id,
+            TransactionsSchema.bank_acc_id,
+            TransactionsSchema.transaction_type,
+            TransactionsSchema.amount,
+            TransactionsSchema.previous_balance,
+            TransactionsSchema.new_balance,
+            TransactionsSchema.timestamp
+        ).where(TransactionsSchema.bank_acc_id == bank_acc_id)
+        transactions = self._session.execute(stmt).mappings().all()
+        transactions_list = [UserTransactionDetails(**transaction) for transaction in transactions]
+        return transactions_list
+        

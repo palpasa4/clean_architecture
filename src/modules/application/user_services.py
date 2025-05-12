@@ -1,7 +1,7 @@
 import hashlib, uuid
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
-from src.modules.domain.user.entity import BankAccount, BankAccount, User
+from src.modules.domain.user.entity import BankAccount, BankAccount, Transactions, User, UserTransactionDetails, UserViewDetails
 from src.modules.domain.user.repository import UserRepository
 from src.modules.infrastructure.auth.password_utils import hash_password
 from src.modules.infrastructure.logging.logconfig import logger
@@ -18,11 +18,11 @@ class UserService():
 
 
     def check_duplicate_user(self, username:str) -> None:
-        user = self.user_repository.get_user(username)
+        user = self.user_repository.get_user_by_username(username)
         if user:
-            logger.error(f"Duplicate user creation attempt: username= {username}")
+            logger.error(f"Duplicate user creation attempt: username= {user.username}")
             raise DuplicateUserException(
-                message=f"User with username {username} already exists.", status_code=409
+                message=f"User with username {user.username} already exists.", status_code=409
             )
 
 
@@ -62,7 +62,7 @@ class UserService():
             raise DatabaseException("Database error: Unable to add user.", status_code=500)
 
 
-    def create_bank_acc(self, user_entity: User):
+    def create_bank_acc(self, user_entity: User) -> None:
         try:
             account_entity=BankAccount(
                 bank_acc_id= f"ACC-{str(uuid.uuid4())[:8]}",
@@ -78,8 +78,8 @@ class UserService():
             )
     
 
-    def check_valid_user(self, model: UserLoginModel): 
-        user = self.user_repository.get_user(model.username)
+    def check_valid_user(self, model: UserLoginModel) -> User: 
+        user = self.user_repository.get_user_by_username(model.username)
         if user is None or not check_password(
             model.password.get_secret_value(), str(user.password)
         ):
@@ -90,7 +90,7 @@ class UserService():
         return user
     
 
-    def check_ifuser(self, id: str):
+    def check_ifuser(self, id: str) -> None:
         if not self.user_repository.get_user_by_id(id):
             logger.error(f"Unauthorized access attempt by user with userid: {id}")
             raise UserPermissionDeniedException(
@@ -98,8 +98,8 @@ class UserService():
             ) 
         
 
-    def deposit(self, model: AmountModel, id: str):
-        if model.amount < 500:
+    def deposit(self, transaction_entity: Transactions) -> BankAccount | None:
+        if transaction_entity.amount < 500:
             logger.error(
                 "DepositBalanceException: Trying to deposit less than minimum amount!"
             )
@@ -107,18 +107,18 @@ class UserService():
                 message="Minimum amount of deposit is 500!", status_code=400
             )
         try:
-            account = self.user_repository.add_balance(model, id)
-            return account
+            account_entity = self.user_repository.add_balance(transaction_entity)
+            return account_entity
         except Exception as e:
-            logger.error(f"Database error: Unable to deposit amount for user with ID: {id}")
+            logger.error(f"Database error: Unable to deposit amount for user with ID: {transaction_entity.cust_id}")
             raise DatabaseException(
                 message="Database error: Unable to deposit money.", status_code=500
             )
-        
+
     
-    def withdraw(self, model: AmountModel, id: str):
-        bank_acc= self.user_repository.get_account(id)
-        if model.amount < 500:
+    def withdraw(self, transaction_entity: Transactions):
+        bank_acc= self.user_repository.get_account(transaction_entity.cust_id)
+        if transaction_entity.amount < 500:
             logger.error(
                 "WithdrawBalanceException: Trying to withdraw less than minimum amount!"
             )
@@ -128,7 +128,7 @@ class UserService():
         if (
             bank_acc
             and isinstance(bank_acc.balance, (float))
-            and float(bank_acc.balance) - 500 < model.amount
+            and float(bank_acc.balance) - 500 < transaction_entity.amount
         ):
             logger.error(
                 "WithdrawBalanceException: Trying to withdraw more than existing balance!"
@@ -138,18 +138,18 @@ class UserService():
                 status_code=400,
             )
         try:
-            account = self.user_repository.deduct_balance(model, id)
-            return account
+            account_entity = self.user_repository.deduct_balance(transaction_entity)
+            return account_entity
         except Exception as e:
             logger.error(
-                f"Database error: Unable to withdraw amount for user with ID: {id}"
+                f"Database error: Unable to withdraw amount for user with ID: {transaction_entity.cust_id}"
             )
             raise DatabaseException(
                 message="Database error: Unable to withdraw money.", status_code=500
             )
        
 
-    def user_view_details(self, id) -> UserViewDetailsModel:
+    def user_view_details(self, id) -> UserViewDetails:
         details = self.user_repository.get_detail(id)
         if not details:
             logger.error(
@@ -159,7 +159,7 @@ class UserService():
         return details
     
 
-    def user_view_transactions(self, id: str)-> list:
+    def user_view_transactions(self, id: str)-> list[UserTransactionDetails]:
         transactions = self.user_repository.get_transactions(id)
         if not transactions:
             logger.error(
@@ -169,3 +169,4 @@ class UserService():
                 message="No transactions found.", status_code=404
             )
         return transactions
+    
