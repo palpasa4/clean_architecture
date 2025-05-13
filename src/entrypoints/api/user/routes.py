@@ -1,22 +1,10 @@
 from fastapi import APIRouter, Request, Depends
-from src.entrypoints.api.mappers.user_mapper import (
-    model_to_transaction_entity,
-    model_to_user_entity,
-)
+from src.entrypoints.api.mappers.user_mapper import *
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
-from src.entrypoints.api.dependencies import (
-    get_admin_service,
-    get_user_service,
-    AnnotatedDatabaseSession,
-    AnnotatedDefaultSettings,
-)
-from src.modules.infrastructure.repositories.postgres.user_repository import (
-    UserPostgresRepository,
-)
-from src.modules.infrastructure.repositories.postgres.admin_repository import (
-    AdminPostgresRepository,
-)
+from src.entrypoints.api.dependencies import *
+from src.modules.infrastructure.repositories.postgres.user_repository import *
+from src.modules.infrastructure.repositories.postgres.admin_repository import *
 from src.modules.application.user_services import UserService
 from src.modules.application.admin_services import AdminService
 from src.modules.infrastructure.auth.auth_bearer import JWTBearer
@@ -35,10 +23,8 @@ router = APIRouter(prefix="/users", tags=["user"])
     status_code=200,
 )
 def create_user_resource(
-    model: CreateUserModel, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
+    _: AnnotatedValidAdminID, model: CreateUserModel, db: AnnotatedDatabaseSession
 ):
-    adminservice = get_admin_service(db)
-    adminservice.check_ifadmin(id)
 
     userservice = get_user_service(db)
     user_entity = model_to_user_entity(model)
@@ -79,11 +65,10 @@ def user_login(
     status_code=200,
 )
 def deposit_amount(
-    model: AmountModel, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
+    user_id: AnnotatedValidUserID, model: AmountModel, db: AnnotatedDatabaseSession
 ):
     userservice = get_user_service(db)
-    userservice.check_ifuser(id)
-    transaction_entity = model_to_transaction_entity(model, id)
+    transaction_entity = model_to_transaction_entity(model, user_id)
     account = userservice.deposit(transaction_entity)
     if account:
         logger.info(
@@ -106,11 +91,10 @@ def deposit_amount(
     status_code=200,
 )
 def withdraw_amount(
-    model: AmountModel, db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())
+    user_id: AnnotatedValidUserID, model: AmountModel, db: AnnotatedDatabaseSession
 ):
     userservice = get_user_service(db)
-    userservice.check_ifuser(id)
-    transaction_entity = model_to_transaction_entity(model, id)
+    transaction_entity = model_to_transaction_entity(model, user_id)
     account_entity = userservice.withdraw(transaction_entity)
     if account_entity:
         logger.info(
@@ -132,12 +116,11 @@ def withdraw_amount(
     tags=["user_view_details"],
     status_code=200,
 )
-def view_details(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
+def view_details(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
     userservice = get_user_service(db)
-    userservice.check_ifuser(id)
-    details = userservice.user_view_details(id)
+    details = userservice.user_view_details(user_id)
     response = UserViewDetailsModel(**vars(details))
-    logger.info(f"User details viewed by customer with ID: {id}.")
+    logger.info(f"User details viewed by customer with ID: {user_id}.")
     return response
 
 
@@ -148,12 +131,11 @@ def view_details(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
     tags=["user_view_transactions"],
     status_code=200,
 )
-def view_transactions(db: AnnotatedDatabaseSession, id: str = Depends(JWTBearer())):
+def view_transactions(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
     userservice = get_user_service(db)
-    userservice.check_ifuser(id)
-    transactions = userservice.user_view_transactions(id)
+    transactions = userservice.user_view_transactions(user_id)
     response = [
         UserTransactionDetailsModel(**vars(transaction)) for transaction in transactions
     ]
-    logger.info(f"Transaction details viewed by customer with ID: {id}")
+    logger.info(f"Transaction details viewed by customer with ID: {user_id}")
     return response

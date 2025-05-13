@@ -39,8 +39,8 @@ class JWTBearer(HTTPBearer):
                 settings.secret.get_secret_value(),
                 algorithms=[settings.algorithm],
             )
-            username = decoded_token.get("user_id")
-            return username
+            user_id = decoded_token.get("user_id")
+            return user_id
         else:
             logger.info("Authentication failed: Invalid authorization code (HTTP 403).")
             raise HTTPException(status_code=403, detail="Invalid authorization code.")

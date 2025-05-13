@@ -3,14 +3,8 @@ from fastapi import APIRouter, Request, Depends, Query
 from src.entrypoints.api.mappers.admin_mapper import model_to_admin_entity
 from src.modules.application.admin_services import AdminService
 from src.modules.domain.admin.entity import *
-from src.modules.infrastructure.repositories.postgres.admin_repository import (
-    AdminPostgresRepository,
-)
-from src.entrypoints.api.dependencies import (
-    get_admin_service,
-    AnnotatedDatabaseSession,
-    AnnotatedDefaultSettings,
-)
+from src.modules.infrastructure.repositories.postgres.admin_repository import *
+from src.entrypoints.api.dependencies import *
 from src.entrypoints.api.admin.models import *
 from src.entrypoints.api.admin.responses import *
 from src.modules.infrastructure.auth.auth_handler import sign_jwt
@@ -64,21 +58,21 @@ def admin_login(
     status_code=200,
 )
 def view_details(
+    admin_id: AnnotatedValidAdminID,  # _:AnnotatedCheckAdmin -> if the parameter is used no where
     db: AnnotatedDatabaseSession,
-    adminid: str = Depends(JWTBearer()),
     id: str = Query(default=None),
-    # isadmin: AnnotatedCheckAdmin
 ):
-    adminservice = get_admin_service(db)
-    adminservice.check_ifadmin(adminid)
+    admin_service = get_admin_service(db)
     if not id:
-        details = adminservice.view_details_by_admin()
+        details = admin_service.view_details_by_admin()
         response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
-        logger.info(f"All user details viewed by admin with ID: {adminid}")
+        logger.info(f"All user details viewed by admin with ID: {admin_id}")
         return response
-    details = adminservice.view_specific_detail_by_admin(id)
+    details = admin_service.view_specific_detail_by_admin(id)
     response = AdminViewDetailsModel(**vars(details))
-    logger.info(f"Details of customer with ID: {id} viewed by admin with ID: {adminid}")
+    logger.info(
+        f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
+    )
     return response
 
 
@@ -88,19 +82,19 @@ def view_details(
     response_model=list[AdminTransactionDetailsModel] | AdminTransactionDetailsModel,
 )
 def view_transactions(
+    admin_id: AnnotatedValidAdminID,
     db: AnnotatedDatabaseSession,
-    adminid: str = Depends(JWTBearer()),
     id: str = Query(default=None),
 ):
     adminservice = get_admin_service(db)
-    adminservice.check_ifadmin(adminid)
+    adminservice.check_ifadmin(admin_id)
     if not id:
         transactions = adminservice.view_transactions_by_admin()
         response = [
             AdminTransactionDetailsModel(**vars(transaction))
             for transaction in transactions
         ]
-        logger.info(f"Transactions viewed by admin with ID: {adminid}")
+        logger.info(f"Transactions viewed by admin with ID: {admin_id}")
         return response
     transactions = adminservice.view_specific_transactions_by_admin(id)
     if transactions:
@@ -109,6 +103,6 @@ def view_transactions(
             for transaction in transactions
         ]
         logger.info(
-            f"Transactions of Customer with Customer ID {id} viewed by admin with ID {adminid}"
+            f"Transactions of Customer with Customer ID {id} viewed by admin with ID {admin_id}"
         )
         return response

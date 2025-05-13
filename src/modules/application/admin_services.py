@@ -1,4 +1,5 @@
 import uuid
+from yaml import StreamStartEvent
 from src.entrypoints.api import admin, user
 from src.entrypoints.api.admin.responses import *
 from src.modules.domain.admin.repository import AdminRepository
@@ -31,12 +32,14 @@ class AdminService:
                     status_code=409,
                 )
             self.admin_repository.create_admin(admin_entity)
+        except DuplicateAdminException:
+            raise
         except Exception as e:
             logger.error(
-                f"Admin creation failed for username='{admin_entity.username}': {str(e)}"
+                f"Database Error: Admin creation failed for username='{admin_entity.username}': {str(e)}"
             )
             raise AdminDatabaseOperationError(
-                message="Unable to create admin.", status_code=500
+                message="Database Error: Unable to create admin.", status_code=500
             )
 
     def check_valid_admin(self, model: AdminLoginModel) -> Admin:
@@ -53,6 +56,8 @@ class AdminService:
                     status_code=401,
                 )
             return admin
+        except InvalidAdminLoginException:
+            raise
         except Exception as e:
             logger.error(
                 f"Database error while validating admin '{model.username}': {str(e)}"
@@ -61,19 +66,21 @@ class AdminService:
                 message="Error while validating admin!", status_code=500
             )
 
-    def check_ifadmin(self, id: str) -> None:
-        try:
-            if not self.admin_repository.get_admin_by_id(id):
+    def check_ifadmin(self, id: str) -> bool:
+        try:  # for db error
+            admin = self.admin_repository.get_admin_by_id(id)
+            if not admin:  # Business logic error
                 logger.error(f"Unauthorized access attempt by user with userid: {id}")
                 raise UserPermissionDeniedException(
                     message="User not allowed.", status_code=401
                 )
-        except Exception as e:
-            logger.error(
-                f"Database error while checking admin for userid='{id}': {str(e)}"
-            )
+            return True
+        except UserPermissionDeniedException:
+            raise
+        except Exception as e:  # db error
+            logger.error(f"Database error while fetching admin id={id}: {str(e)}")
             raise AdminDatabaseOperationError(
-                message="Error while checking admin status.", status_code=500
+                message="Database error!", status_code=500
             )
 
     def view_details_by_admin(self) -> list[AdminViewDetails]:
@@ -85,6 +92,8 @@ class AdminService:
                     message="No details found!", status_code=404
                 )
             return users_list
+        except DetailNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving user details: {str(e)}"
@@ -102,6 +111,8 @@ class AdminService:
                     message="No details found!", status_code=404
                 )
             return users_detail
+        except DetailNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving user details for id='{id}': {str(e)}"
@@ -119,6 +130,8 @@ class AdminService:
                     message="No transactions found!", status_code=404
                 )
             return transaction_list
+        except TransactionsNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving transaction details: {str(e)}"
@@ -130,9 +143,10 @@ class AdminService:
 
     def view_specific_transactions_by_admin(
         self, id: str
-    ) -> list[AdminTransactionDetails] | None:
+    ) -> list[AdminTransactionDetails]:
         try:
             transactions = self.admin_repository.get_specific_transactions(id)
+
             if not transactions:
                 logger.error(
                     f"DatabaseException: No transactions found for user with ID: {id}."
@@ -141,6 +155,8 @@ class AdminService:
                     message="No transactions found.", status_code=404
                 )
             return transactions
+        except TransactionsNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving transaction details for user  {id}: {str(e)}"

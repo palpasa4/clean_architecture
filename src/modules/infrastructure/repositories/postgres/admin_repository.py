@@ -53,6 +53,8 @@ class AdminPostgresRepository(AdminRepository):
         if valid_admin:
             admin_entity = orm_to_admin_entity(valid_admin.__dict__)
             return admin_entity
+        else:
+            return None
 
     def get_bank_acc(self, cust_id: str) -> BankAccount | None:
         account = (
@@ -103,7 +105,7 @@ class AdminPostgresRepository(AdminRepository):
         if details:
             return AdminViewDetails(**dict(details._mapping))
 
-    def get_transactions(self) -> list[AdminTransactionDetails]:
+    def get_transactions(self) -> list[AdminTransactionDetails] | None:
         transactions = (
             self._session.execute(
                 select(

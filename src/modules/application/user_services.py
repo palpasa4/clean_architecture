@@ -1,4 +1,3 @@
-import stat
 import hashlib, uuid
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
@@ -17,6 +16,9 @@ from src.entrypoints.api.user.exceptions import *
 from sqlalchemy.orm import Session
 from src.entrypoints.api.user.models import *
 from src.modules.infrastructure.auth.password_utils import check_password
+from src.modules.infrastructure.repositories.postgres.user_repository import (
+    UserPostgresRepository,
+)
 
 
 class UserService:
@@ -35,6 +37,8 @@ class UserService:
                     message=f"User with username {user.username} already exists.",
                     status_code=409,
                 )
+        except DuplicateUserException:
+            raise
         except Exception as e:
             logger.error(f"Database error while checking for duplicate user: {str(e)}")
             raise UserDatabaseOperationError(
@@ -46,12 +50,12 @@ class UserService:
         if len(entity.username) < 7:
             # simple input validation issue
             logger.warning("Username too short: must be at least 7 characters long")
-            raise ValidationException(
+            raise UsernameValidationException(
                 message="Username must be at least 7 characters long!", status_code=400
             )
         if len(entity.username) > 20:
             logger.warning("Username too long: cannot be more than 20 characters!")
-            raise ValidationException(
+            raise UsernameValidationException(
                 message="Username cannot include more than 20 characters!",
                 status_code=400,
             )
@@ -60,24 +64,23 @@ class UserService:
             logger.error(
                 "Bank account creation failed: opening balance below minimum requirement"
             )
-            raise ValidationException(
+            raise UsernameValidationException(
                 message="Minimum opening balance is 500!", status_code=400
             )
 
     def create_user_handler(self, user_entity: User) -> User:
+        self.check_duplicate_user(user_entity.username)
+        self.check_user_details(user_entity)
         try:
-            self.check_duplicate_user(user_entity.username)
-            self.check_user_details(user_entity)
             self.user_repository.add_user(user_entity)
-            self.create_bank_acc(user_entity)
-            return user_entity
         except Exception as e:
-            logger.error(
-                f"User creation failed for username='{user_entity.username}': {str(e)}"
-            )
+            logger.error("Database Error while adding user to db.")
             raise UserDatabaseOperationError(
-                message="Unable to create user.", status_code=500
+                message=f"Error while adding user to database! {str(e)}",
+                status_code=500,
             )
+        self.create_bank_acc(user_entity)
+        return user_entity
 
     def create_bank_acc(self, user_entity: User) -> None:
         try:
@@ -108,19 +111,24 @@ class UserService:
                     status_code=401,
                 )
             return user
+        except InvalidUserLoginException:
+            raise
         except Exception as e:
             logger.error(f"Database error while validating user. Error: {str(e)}")
             raise UserDatabaseOperationError(
                 message="Database error while validating user.", status_code=500
             )
 
-    def check_ifuser(self, id: str) -> None:
+    def check_ifuser(self, id: str) -> bool:
         try:
             if not self.user_repository.get_user_by_id(id):
                 logger.error(f"Unauthorized access attempt by user with userid: {id}")
                 raise UserPermissionDeniedException(
                     message="User not allowed.", status_code=401
                 )
+            return True
+        except UserPermissionDeniedException:
+            raise
         except Exception as e:
             logger.error(f"Database error while fetching user id. Error: {str(e)}")
             raise UserDatabaseOperationError(
@@ -132,7 +140,7 @@ class UserService:
             logger.error(
                 "DepositBalanceException: Trying to deposit less than minimum amount!"
             )
-            raise ValidationException(
+            raise AmountValidationException(
                 message="Minimum amount of deposit is 500!", status_code=400
             )
         try:
@@ -153,7 +161,7 @@ class UserService:
                 logger.error(
                     "WithdrawBalanceException: Trying to withdraw less than minimum amount!"
                 )
-                raise ValidationException(
+                raise AmountValidationException(
                     message="Minimum amount of withdrawal is 500!", status_code=400
                 )
             if (
@@ -164,12 +172,14 @@ class UserService:
                 logger.error(
                     "WithdrawBalanceException: Trying to withdraw more than existing balance!"
                 )
-                raise ValidationException(
+                raise AmountValidationException(
                     message=f"Withdrawal exceeds existing balance. Minimum existing balance should be NPR 500 Existing balance is : {bank_acc.balance}",
                     status_code=400,
                 )
             account_entity = self.user_repository.deduct_balance(transaction_entity)
             return account_entity
+        except AmountValidationException:
+            raise
         except Exception as e:
             logger.error(
                 f"Database error: Unable to withdraw amount for user with ID: {transaction_entity.cust_id}"
@@ -189,6 +199,8 @@ class UserService:
                     message="Detail Not found.", status_code=404
                 )
             return details
+        except DetailNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[User Access] Database error while retrieving user details. Error: {str(e)}"
@@ -208,6 +220,8 @@ class UserService:
                     message="No transactions found.", status_code=404
                 )
             return transactions
+        except TransactionsNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[User Access] Database error while retrieving transaction details. Error: {str(e)}"
