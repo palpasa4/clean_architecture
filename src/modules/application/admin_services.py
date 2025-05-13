@@ -22,69 +22,97 @@ class AdminService():
 
 
     def create_admin_handler(self, admin_entity: Admin) -> None:
-        admin=self.admin_repository.check_duplicate_admin(admin_entity) 
-        if admin:
-            logger.error(f"Duplicate admin creation attempt: username='{admin_entity.username}'")
-            raise DuplicateAdminException(
-            message=f"Admin with username '{admin_entity.username}' already exists.", status_code=409
-        )
-        self.admin_repository.create_admin(admin_entity) #exception handling missing
+        try:
+            admin=self.admin_repository.check_duplicate_admin(admin_entity) 
+            if admin:
+                logger.error(f"Duplicate admin creation attempt: username='{admin_entity.username}'")
+                raise DuplicateAdminException(
+                message=f"Admin with username '{admin_entity.username}' already exists.", status_code=409
+            )
+            self.admin_repository.create_admin(admin_entity) 
+        except Exception as e:
+            logger.error(f"Admin creation failed for username='{admin_entity.username}': {str(e)}")
+            raise AdminDatabaseOperationError(message="Unable to create admin.", status_code=500)
 
 
     def check_valid_admin(self, model: AdminLoginModel) -> Admin:
-            admin = self.admin_repository.get_admin_by_username(model)
-            if not admin or not check_password(
-                model.password.get_secret_value(), str(admin.password)
-            ):  
-                logger.warning(f"Invalid admin login attempt: username='{model.username}'")
-                raise InvalidAdminLoginException(
-                    message=f"Login Failed: Invalid username or password.", status_code=401
-                )
-            return admin
+            try:
+                admin = self.admin_repository.get_admin_by_username(model)
+                if not admin or not check_password(
+                    model.password.get_secret_value(), str(admin.password)
+                ):  
+                    logger.warning(f"Invalid admin login attempt: username='{model.username}'")
+                    raise InvalidAdminLoginException(
+                        message=f"Login Failed: Invalid username or password.", status_code=401
+                    )
+                return admin
+            except Exception as e:
+                logger.error(f"Database error while validating admin '{model.username}': {str(e)}")
+                raise AdminDatabaseOperationError(message="Error while validating admin!", status_code=500)
 
 
     def check_ifadmin(self, id: str) -> None:
-        if not self.admin_repository.get_admin_by_id(id):
-            logger.error(f"Unauthorized access attempt by user with userid: {id}")
-            raise UserPermissionDeniedException(
-                message="User not allowed.", status_code=401
-            ) 
+        try:
+            if not self.admin_repository.get_admin_by_id(id):
+                logger.error(f"Unauthorized access attempt by user with userid: {id}")
+                raise UserPermissionDeniedException(
+                    message="User not allowed.", status_code=401
+                ) 
+        except Exception as e:
+            logger.error(f"Database error while checking admin for userid='{id}': {str(e)}")
+            raise AdminDatabaseOperationError(message="Error while checking admin status.", status_code=500)
 
 
-    def admin_view_details(self) -> list[AdminViewDetails]:
-        users_list = self.admin_repository.get_details()
-        if not users_list:
-            logger.error("Database Exception: No details found!")
-            raise DetailNotFoundException(message="No details found!", status_code=404)
-        return users_list
+    def view_details_by_admin(self) -> list[AdminViewDetails]:
+        try:
+            users_list = self.admin_repository.get_details()
+            if not users_list:
+                logger.error("Database Exception: No details found!")
+                raise DetailNotFoundException(message="No details found!", status_code=404)
+            return users_list
+        except Exception as e:
+            logger.error(f"[Admin Access] Database error while retrieving user details: {str(e)}")
+            raise AdminDatabaseOperationError(message="Database error while retrieving user details.", status_code=500)
 
 
-    def admin_view_specific_detail(self, id: str) -> AdminViewDetails:
-        users_detail = self.admin_repository.get_specific_user_detail(id)
-        if not users_detail:
-            logger.error("Database Exception: No details found!")
-            raise DetailNotFoundException(message="No details found!", status_code=404)
-        return users_detail
-    
+    def view_specific_detail_by_admin(self, id: str) -> AdminViewDetails:
+        try:
+            users_detail = self.admin_repository.get_specific_user_detail(id)
+            if not users_detail:
+                logger.error("Database Exception: No details found!")
+                raise DetailNotFoundException(message="No details found!", status_code=404)
+            return users_detail
+        except Exception as e:
+            logger.error(f"[Admin Access] Database error while retrieving user details for id='{id}': {str(e)}")
+            raise AdminDatabaseOperationError(message="Database error while retrieving user details.", status_code=500)
 
-    def admin_view_transactions(self) -> list[AdminTransactionDetails]:
-        transaction_list = self.admin_repository.get_transactions()
-        if not transaction_list:
-            logger.error("Database Error: No transactions found. ")
-            raise TransactionsNotFoundException(
-                message="No transactions found!", status_code=404
-            )
-        return transaction_list
-    
 
-    def admin_view_specific_transactions(self, id: str)-> list[AdminTransactionDetails] | None:
-        transactions = self.admin_repository.get_specific_transactions(id)
-        if not transactions:
-            logger.error(
-                f"DatabaseException: No transactions found for user with ID: {id}."
-            )
-            raise TransactionsNotFoundException(
-                message="No transactions found.", status_code=404
-            )
-        return transactions
-    
+    def view_transactions_by_admin(self) -> list[AdminTransactionDetails]:
+        try:
+            transaction_list = self.admin_repository.get_transactions()
+            if not transaction_list:
+                logger.error("Database Error: No transactions found. ")
+                raise TransactionsNotFoundException(
+                    message="No transactions found!", status_code=404
+                )
+            return transaction_list
+        except Exception as e:
+            logger.error(f"[Admin Access] Database error while retrieving transaction details: {str(e)}")
+            raise AdminDatabaseOperationError(message="Database error while retrieving transaction details.", status_code=500)
+
+
+    def view_specific_transactions_by_admin(self, id: str)-> list[AdminTransactionDetails] | None:
+        try:
+            transactions = self.admin_repository.get_specific_transactions(id)
+            if not transactions:
+                logger.error(
+                    f"DatabaseException: No transactions found for user with ID: {id}."
+                )
+                raise TransactionsNotFoundException(
+                    message="No transactions found.", status_code=404
+                )
+            return transactions
+        except Exception as e:
+            logger.error(f"[Admin Access] Database error while retrieving transaction details for user  {id}: {str(e)}")
+            raise AdminDatabaseOperationError(message="Database error while retrieving transaction details.", status_code=500)
+        

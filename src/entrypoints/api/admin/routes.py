@@ -52,11 +52,11 @@ def view_details(
     adminservice= get_admin_service(db)
     adminservice.check_ifadmin(adminid)
     if not id:
-        details= adminservice.admin_view_details()
+        details= adminservice.view_details_by_admin()
         response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
         logger.info(f"All user details viewed by admin with ID: {adminid}")
         return response
-    details = adminservice.admin_view_specific_detail(id)
+    details = adminservice.view_specific_detail_by_admin(id)
     response = AdminViewDetailsModel(**vars(details))
     logger.info(f"Details of customer with ID: {id} viewed by admin with ID: {adminid}")
     return response
@@ -70,11 +70,11 @@ def view_transactions(
     adminservice= get_admin_service(db)
     adminservice.check_ifadmin(adminid)
     if not id:
-        transactions = adminservice.admin_view_transactions()
+        transactions = adminservice.view_transactions_by_admin()
         response = [AdminTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
         logger.info(f"Transactions viewed by admin with ID: {adminid}")
         return response
-    transactions=adminservice.admin_view_specific_transactions(id)
+    transactions=adminservice.view_specific_transactions_by_admin(id)
     if transactions:
         response = [AdminTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
         logger.info(f"Transactions of Customer with Customer ID {id} viewed by admin with ID {adminid}")
