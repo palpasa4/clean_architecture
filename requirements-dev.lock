@@ -37,7 +37,10 @@ email-validator==2.2.0
     # via pydantic
 fastapi==0.115.12
     # via bank-sys-cleanarch
+    # via fastapi-pagination
 fastapi-cli==0.0.7
+    # via bank-sys-cleanarch
+fastapi-pagination==0.13.1
     # via bank-sys-cleanarch
 greenlet==3.2.1
     # via sqlalchemy
@@ -71,6 +74,7 @@ psycopg2-binary==2.9.10
 pydantic==2.11.4
     # via bank-sys-cleanarch
     # via fastapi
+    # via fastapi-pagination
     # via pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
@@ -103,6 +107,7 @@ typer==0.15.3
 typing-extensions==4.13.2
     # via anyio
     # via fastapi
+    # via fastapi-pagination
     # via pydantic
     # via pydantic-core
     # via rich-toolkit

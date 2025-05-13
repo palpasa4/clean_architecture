@@ -1,4 +1,5 @@
 import uuid
+from fastapi_pagination import paginate
 from yaml import StreamStartEvent
 from src.entrypoints.api import admin, user
 from src.entrypoints.api.admin.responses import *
@@ -83,17 +84,29 @@ class AdminService:
                 message="Database error!", status_code=500
             )
 
-    def view_details_by_admin(self) -> list[AdminViewDetails]:
+    # def view_details_by_admin(self) -> list[AdminViewDetails]:
+    #     try:
+    #         users_list = self.admin_repository.get_details()
+    #         if not users_list:
+    #             logger.error("Database Exception: No details found!")
+    #             raise DetailNotFoundException(
+    #                 message="No details found!", status_code=404
+    #             )
+    #         return users_list
+    #     except DetailNotFoundException:
+    #         raise
+    #     except Exception as e:
+    #         logger.error(
+    #             f"[Admin Access] Database error while retrieving user details: {str(e)}"
+    #         )
+    #         raise AdminDatabaseOperationError(
+    #             message="Database error while retrieving user details.", status_code=500
+    #         )
+
+
+    def view_details_by_admin(self):
         try:
-            users_list = self.admin_repository.get_details()
-            if not users_list:
-                logger.error("Database Exception: No details found!")
-                raise DetailNotFoundException(
-                    message="No details found!", status_code=404
-                )
-            return users_list
-        except DetailNotFoundException:
-            raise
+            return self.admin_repository.get_details()
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving user details: {str(e)}"
@@ -101,6 +114,7 @@ class AdminService:
             raise AdminDatabaseOperationError(
                 message="Database error while retrieving user details.", status_code=500
             )
+    
 
     def view_specific_detail_by_admin(self, id: str) -> AdminViewDetails:
         try:

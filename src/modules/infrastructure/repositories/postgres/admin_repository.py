@@ -9,6 +9,7 @@ from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 from src.modules.domain.admin.entity import *
 from src.entrypoints.api.admin.models import AdminLoginModel
 from src.modules.infrastructure.persistence.dbschemas.user import *
+from fastapi_pagination.ext.sqlalchemy import paginate
 
 
 class AdminPostgresRepository(AdminRepository):
@@ -67,23 +68,39 @@ class AdminPostgresRepository(AdminRepository):
             account_entity = orm_to_bankaccount_entity(account)
             return account_entity
 
-    def get_details(self) -> list[AdminViewDetails] | None:
-        details = self._session.execute(
-            select(
-                UserSchema.cust_id,
-                UserSchema.username,
-                BankAccountSchema.bank_acc_id,
-                BankAccountSchema.fullname,
-                BankAccountSchema.address,
-                BankAccountSchema.contact_no,
-                BankAccountSchema.created_at,
-                BankAccountSchema.updated_at,
-            ).outerjoin(
-                BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id
-            )
-        ).fetchall()
-        users_list = [AdminViewDetails(**dict(detail._mapping)) for detail in details]
-        return users_list
+    # def get_details(self) -> list[AdminViewDetails] | None:
+    #     details = self._session.execute(
+    #         select(
+    #             UserSchema.cust_id,
+    #             UserSchema.username,
+    #             BankAccountSchema.bank_acc_id,
+    #             BankAccountSchema.fullname,
+    #             BankAccountSchema.address,
+    #             BankAccountSchema.contact_no,
+    #             BankAccountSchema.created_at,
+    #             BankAccountSchema.updated_at,
+    #         ).outerjoin(
+    #             BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id
+    #         )
+    #     ).fetchall()
+    #     users_list = [AdminViewDetails(**dict(detail._mapping)) for detail in details]
+    #     return users_list
+
+    def get_details(self):
+        query = select(
+            UserSchema.cust_id,
+            UserSchema.username,
+            BankAccountSchema.bank_acc_id,
+            BankAccountSchema.fullname,
+            BankAccountSchema.address,
+            BankAccountSchema.contact_no,
+            BankAccountSchema.created_at,
+            BankAccountSchema.updated_at,
+        ).outerjoin(
+            BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id
+        )
+
+        return paginate(self._session, query)
 
     def get_specific_user_detail(self, id: str) -> AdminViewDetails | None:
         details = self._session.execute(

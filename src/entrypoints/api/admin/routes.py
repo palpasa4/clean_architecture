@@ -1,5 +1,6 @@
 from email.policy import default
 from fastapi import APIRouter, Request, Depends, Query
+from fastapi_pagination import Page
 from src.entrypoints.api.mappers.admin_mapper import model_to_admin_entity
 from src.modules.application.admin_services import AdminService
 from src.modules.domain.admin.entity import *
@@ -50,30 +51,46 @@ def admin_login(
     return TokenResponseModel(access_token=token)
 
 
-# view all or specific user's details
 @router.get(
     "/details/",
-    response_model=list[AdminViewDetailsModel] | AdminViewDetailsModel,
+    response_model=Page[AdminViewDetailsModel],
     tags=["admin_view_details"],
     status_code=200,
 )
 def view_details(
-    admin_id: AnnotatedValidAdminID,  # _:AnnotatedCheckAdmin -> if the parameter is used no where
+    admin_id: AnnotatedValidAdminID,
     db: AnnotatedDatabaseSession,
-    id: str = Query(default=None),
+    id: str = Query(default=None)
 ):
     admin_service = get_admin_service(db)
     if not id:
-        details = admin_service.view_details_by_admin()
-        response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
-        logger.info(f"All user details viewed by admin with ID: {admin_id}")
-        return response
-    details = admin_service.view_specific_detail_by_admin(id)
-    response = AdminViewDetailsModel(**vars(details))
-    logger.info(
-        f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
-    )
-    return response
+        return admin_service.view_details_by_admin()
+    
+    
+# # view all or specific user's details
+# @router.get(
+#     "/details/",
+#     response_model=list[AdminViewDetailsModel] | AdminViewDetailsModel,
+#     tags=["admin_view_details"],
+#     status_code=200,
+# )
+# def view_details(
+#     admin_id: AnnotatedValidAdminID,  # _:AnnotatedCheckAdmin -> if the parameter is used no where
+#     db: AnnotatedDatabaseSession,
+#     id: str = Query(default=None)
+# ):
+#     admin_service = get_admin_service(db)
+#     if not id:
+#         details = admin_service.view_details_by_admin()
+#         response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
+#         logger.info(f"All user details viewed by admin with ID: {admin_id}")
+#         return response
+#     details = admin_service.view_specific_detail_by_admin(id)
+#     response = AdminViewDetailsModel(**vars(details))
+#     logger.info(
+#         f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
+#     )
+#     return response
 
 
 # view all or specific user's transaction details.

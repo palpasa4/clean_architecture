@@ -8,6 +8,7 @@ from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 from src.modules.infrastructure.persistence.dbschemas.user import *
 from src.modules.infrastructure.persistence.database import get_db_session
 from src.entrypoints.api.handlers.middleware import CustomExceptionMiddleware
+from fastapi_pagination import add_pagination
 
 
 @asynccontextmanager
@@ -25,6 +26,10 @@ def init_app() -> FastAPI:
     app.include_router(user_routes.router)
     # user middlewares
     app.add_middleware(CustomExceptionMiddleware)
+
+    # add pagination
+    add_pagination(app)
+
     return app
 
 
