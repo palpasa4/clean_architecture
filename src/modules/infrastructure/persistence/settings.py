@@ -16,7 +16,7 @@ class DefaultSettings(BaseModel):
 
 
 class AppSettings(BaseSettings):
-    database: DatabaseSettings  
-    default: DefaultSettings  
+    database: DatabaseSettings
+    default: DefaultSettings
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

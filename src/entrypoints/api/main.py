@@ -12,7 +12,7 @@ from src.entrypoints.api.handlers.middleware import CustomExceptionMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.settings = AppSettings() #type:ignore
+    app.state.settings = AppSettings()  # type:ignore
     print("Starting Server")
     init_db(app.state.settings.database)
     yield
@@ -20,12 +20,12 @@ async def lifespan(app: FastAPI):
 
 
 def init_app() -> FastAPI:
-    app= FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan)
     app.include_router(admin_routes.router)
     app.include_router(user_routes.router)
-    #user middlewares
+    # user middlewares
     app.add_middleware(CustomExceptionMiddleware)
     return app
 
 
-app= init_app()
+app = init_app()

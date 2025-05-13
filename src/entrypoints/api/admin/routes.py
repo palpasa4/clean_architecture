@@ -1,10 +1,16 @@
 from email.policy import default
-from fastapi import APIRouter,Request, Depends, Query
+from fastapi import APIRouter, Request, Depends, Query
 from src.entrypoints.api.mappers.admin_mapper import model_to_admin_entity
 from src.modules.application.admin_services import AdminService
 from src.modules.domain.admin.entity import *
-from src.modules.infrastructure.repositories.postgres.admin_repository import AdminPostgresRepository
-from src.entrypoints.api.dependencies import get_admin_service,AnnotatedDatabaseSession, AnnotatedDefaultSettings
+from src.modules.infrastructure.repositories.postgres.admin_repository import (
+    AdminPostgresRepository,
+)
+from src.entrypoints.api.dependencies import (
+    get_admin_service,
+    AnnotatedDatabaseSession,
+    AnnotatedDefaultSettings,
+)
 from src.entrypoints.api.admin.models import *
 from src.entrypoints.api.admin.responses import *
 from src.modules.infrastructure.auth.auth_handler import sign_jwt
@@ -16,12 +22,19 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 # create admin
-@router.post("/create-admin", response_model=AdminResponseModel , tags=["create_admin"], status_code=200)
+@router.post(
+    "/create-admin",
+    response_model=AdminResponseModel,
+    tags=["create_admin"],
+    status_code=200,
+)
 def create_admin(model: CreateAdminModel, db: AnnotatedDatabaseSession):
-    adminservice= get_admin_service(db)
+    adminservice = get_admin_service(db)
     admin_entity = model_to_admin_entity(model)
     adminservice.create_admin_handler(admin_entity)
-    logger.info(f"New admin added to table 'admin_data' with username: {model.username}")
+    logger.info(
+        f"New admin added to table 'admin_data' with username: {model.username}"
+    )
     return AdminResponseModel(
         message=f"Admin with username '{model.username}' created successfully!"
     )
@@ -36,7 +49,7 @@ def admin_login(
     db: AnnotatedDatabaseSession,
     settings: AnnotatedDefaultSettings,
 ):
-    adminservice= get_admin_service(db)
+    adminservice = get_admin_service(db)
     admin = adminservice.check_valid_admin(model)
     token = sign_jwt(str(admin.admin_id), settings)
     logger.info(f"Admin login successful for username: {model.username}")
@@ -44,15 +57,22 @@ def admin_login(
 
 
 # view all or specific user's details
-@router.get("/details/", response_model= list[AdminViewDetailsModel] | AdminViewDetailsModel, tags=["admin_view_details"], status_code=200)
+@router.get(
+    "/details/",
+    response_model=list[AdminViewDetailsModel] | AdminViewDetailsModel,
+    tags=["admin_view_details"],
+    status_code=200,
+)
 def view_details(
-    db: AnnotatedDatabaseSession, adminid: str = Depends(JWTBearer()),id: str = Query(default=None),
+    db: AnnotatedDatabaseSession,
+    adminid: str = Depends(JWTBearer()),
+    id: str = Query(default=None),
     # isadmin: AnnotatedCheckAdmin
 ):
-    adminservice= get_admin_service(db)
+    adminservice = get_admin_service(db)
     adminservice.check_ifadmin(adminid)
     if not id:
-        details= adminservice.view_details_by_admin()
+        details = adminservice.view_details_by_admin()
         response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
         logger.info(f"All user details viewed by admin with ID: {adminid}")
         return response
@@ -63,20 +83,32 @@ def view_details(
 
 
 # view all or specific user's transaction details.
-@router.get("/transactions/", response_model= list[AdminTransactionDetailsModel] | AdminTransactionDetailsModel, )
+@router.get(
+    "/transactions/",
+    response_model=list[AdminTransactionDetailsModel] | AdminTransactionDetailsModel,
+)
 def view_transactions(
-    db: AnnotatedDatabaseSession, adminid: str = Depends(JWTBearer()),id: str = Query(default=None)
+    db: AnnotatedDatabaseSession,
+    adminid: str = Depends(JWTBearer()),
+    id: str = Query(default=None),
 ):
-    adminservice= get_admin_service(db)
+    adminservice = get_admin_service(db)
     adminservice.check_ifadmin(adminid)
     if not id:
         transactions = adminservice.view_transactions_by_admin()
-        response = [AdminTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
+        response = [
+            AdminTransactionDetailsModel(**vars(transaction))
+            for transaction in transactions
+        ]
         logger.info(f"Transactions viewed by admin with ID: {adminid}")
         return response
-    transactions=adminservice.view_specific_transactions_by_admin(id)
+    transactions = adminservice.view_specific_transactions_by_admin(id)
     if transactions:
-        response = [AdminTransactionDetailsModel(**vars(transaction)) for transaction in transactions]
-        logger.info(f"Transactions of Customer with Customer ID {id} viewed by admin with ID {adminid}")
+        response = [
+            AdminTransactionDetailsModel(**vars(transaction))
+            for transaction in transactions
+        ]
+        logger.info(
+            f"Transactions of Customer with Customer ID {id} viewed by admin with ID {adminid}"
+        )
         return response
-    

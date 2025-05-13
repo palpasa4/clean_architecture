@@ -10,7 +10,7 @@ class Admin:
     password: str
     fullname: str
     email: str
-    role : str 
+    role: str
 
 
 @dataclass
@@ -23,7 +23,7 @@ class AdminViewDetails:
     contact_no: str
     created_at: datetime
     updated_at: datetime
-    
+
 
 @dataclass
 class AdminTransactionDetails:
@@ -32,4 +32,3 @@ class AdminTransactionDetails:
     transaction_type: str
     amount: float
     timestamp: datetime
-    

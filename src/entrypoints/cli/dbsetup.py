@@ -3,7 +3,7 @@ from src.modules.infrastructure.persistence.settings import AppSettings
 
 
 def setup_db():
-    settings = AppSettings() #type: ignore
+    settings = AppSettings()  # type: ignore
     init_db(settings.database)
 
 

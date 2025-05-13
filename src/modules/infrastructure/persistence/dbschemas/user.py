@@ -5,7 +5,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from src.modules.infrastructure.persistence.database import Base
 
 
-
 class UserSchema(Base):
     __tablename__ = "user_data"
 
@@ -38,4 +37,3 @@ class TransactionsSchema(Base):
     previous_balance = Column(Float, index=True)
     new_balance = Column(Float, index=True)
     timestamp = Column(DateTime)
-

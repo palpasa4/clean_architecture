@@ -12,17 +12,16 @@ def model_to_admin_entity(model: CreateAdminModel) -> Admin:
         password=hash_password(model.password),
         fullname=model.fullname,
         email=model.email,
-        role="admin"
+        role="admin",
     )
 
 
-def orm_to_admin_entity(data : dict) -> Admin:
+def orm_to_admin_entity(data: dict) -> Admin:
     return Admin(
         admin_id=data["admin_id"],
         username=data["username"],
         password=data["password"],
         fullname=data["fullname"],
         email=data["email"],
-        role= data["role"],
+        role=data["role"],
     )
-

@@ -9,7 +9,7 @@ class User:
     username: str
     password: str
     hashed_pw: str
-    role : str
+    role: str
     fullname: str
     address: str
     contact_no: str
@@ -20,12 +20,12 @@ class User:
 class BankAccount:
     bank_acc_id: str
     balance: float
-    
+
 
 @dataclass
 class Transactions:
     cust_id: str
-    amount : float
+    amount: float
 
 
 @dataclass

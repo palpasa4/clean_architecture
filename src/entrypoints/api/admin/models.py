@@ -8,10 +8,10 @@ class CreateAdminModel(BaseModel):
     password: str
     fullname: str
     email: EmailStr
-    
-    
+
+
 class AdminLoginModel(BaseModel):
-    username: str 
+    username: str
     password: SecretStr
 
 
