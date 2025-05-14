@@ -85,7 +85,7 @@ class AdminPostgresRepository(AdminRepository):
         )
         return paginate(self._session, query)
 
-    def get_specific_user_detail(self, id: str) -> AdminViewDetails | None:
+    def get_specific_user_detail(self, id: str) -> AdminViewDetailsModel | None:
         details = self._session.execute(
             select(
                 UserSchema.cust_id,
@@ -103,9 +103,9 @@ class AdminPostgresRepository(AdminRepository):
             .where(UserSchema.cust_id == id)
         ).first()
         if details:
-            return AdminViewDetails(**dict(details._mapping))
+            return AdminViewDetailsModel(**dict(details._mapping))
 
-    def get_transactions(self) -> Page[AdminTransactionDetails] :
+    def get_transactions(self) -> Page[AdminTransactionDetailsModel] :
         query = select(
             TransactionsSchema.transaction_id,
             TransactionsSchema.bank_acc_id,
@@ -117,7 +117,7 @@ class AdminPostgresRepository(AdminRepository):
 
     def get_specific_transactions(
         self, id: str
-    ) -> Page[AdminTransactionDetails] :
+    ) -> Page[AdminTransactionDetailsModel] :
         bank_acc_id = self._session.execute(
             select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
         ).scalar()

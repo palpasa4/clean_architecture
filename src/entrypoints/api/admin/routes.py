@@ -79,11 +79,10 @@ def view_specific_user_details(
 ):
     admin_service = get_admin_service(db)
     details = admin_service.view_specific_detail_by_admin(id)
-    response = AdminViewDetailsModel(**vars(details))
     logger.info(
         f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
     )
-    return response
+    return details
 
 
 @router.get(

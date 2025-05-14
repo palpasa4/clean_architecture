@@ -13,22 +13,22 @@ class Admin:
     role: str
 
 
-@dataclass
-class AdminViewDetails:
-    cust_id: str
-    username: str
-    bank_acc_id: str
-    fullname: str
-    address: str
-    contact_no: str
-    created_at: datetime
-    updated_at: datetime
+# @dataclass
+# class AdminViewDetails:
+#     cust_id: str
+#     username: str
+#     bank_acc_id: str
+#     fullname: str
+#     address: str
+#     contact_no: str
+#     created_at: datetime
+#     updated_at: datetime
 
 
-@dataclass
-class AdminTransactionDetails:
-    transaction_id: str
-    bank_acc_id: str
-    transaction_type: str
-    amount: float
-    timestamp: datetime
+# @dataclass
+# class AdminTransactionDetails:
+#     transaction_id: str
+#     bank_acc_id: str
+#     transaction_type: str
+#     amount: float
+#     timestamp: datetime

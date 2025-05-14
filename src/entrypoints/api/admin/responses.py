@@ -23,10 +23,6 @@ class AdminViewDetailsModel(BaseModel):
     updated_at: datetime
 
 
-class Details(BaseModel):
-    details: Page[AdminViewDetailsModel] | AdminViewDetailsModel
-
-
 class AdminTransactionDetailsModel(BaseModel):
     transaction_id: str
     bank_acc_id: str

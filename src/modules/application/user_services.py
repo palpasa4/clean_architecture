@@ -1,4 +1,6 @@
 import hashlib, uuid
+
+from fastapi_pagination import Page
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
 from src.modules.domain.user.entity import (
@@ -6,8 +8,6 @@ from src.modules.domain.user.entity import (
     BankAccount,
     Transactions,
     User,
-    UserTransactionDetails,
-    UserViewDetails,
 )
 from src.modules.domain.user.repository import UserRepository
 from src.modules.infrastructure.auth.password_utils import hash_password
@@ -188,7 +188,7 @@ class UserService:
                 message="Database error: Unable to withdraw money.", status_code=500
             )
 
-    def user_view_details(self, id) -> UserViewDetails:
+    def user_view_details(self, id) -> UserViewDetailsModel:
         try:
             details = self.user_repository.get_detail(id)
             if not details:
@@ -209,10 +209,10 @@ class UserService:
                 message="Database error while retrieving user details.", status_code=500
             )
 
-    def user_view_transactions(self, id: str) -> list[UserTransactionDetails]:
+    def user_view_transactions(self, id: str) -> Page[UserTransactionDetailsModel]:
         try:
             transactions = self.user_repository.get_transactions(id)
-            if not transactions:
+            if not transactions.items:
                 logger.error(
                     f"DatabaseException: No transactions found for user with ID: {id}."
                 )

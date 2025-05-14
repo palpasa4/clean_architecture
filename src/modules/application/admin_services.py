@@ -103,7 +103,7 @@ class AdminService:
             )
     
 
-    def view_specific_detail_by_admin(self, id: str) -> AdminViewDetails:
+    def view_specific_detail_by_admin(self, id: str) -> AdminViewDetailsModel:
         try:
             users_detail = self.admin_repository.get_specific_user_detail(id)
             if not users_detail:
@@ -123,7 +123,7 @@ class AdminService:
             )
 
 
-    def view_transactions_by_admin(self) -> Page[AdminTransactionDetails]:
+    def view_transactions_by_admin(self) -> Page[AdminTransactionDetailsModel]:
         try:
             transactions = self.admin_repository.get_transactions()
             if not transactions.items:
@@ -145,7 +145,7 @@ class AdminService:
 
     def view_specific_transactions_by_admin(
         self, id: str
-    ) -> Page[AdminTransactionDetails]:
+    ) -> Page[AdminTransactionDetailsModel]:
         try:
             transactions = self.admin_repository.get_specific_transactions(id)
 

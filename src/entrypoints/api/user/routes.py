@@ -119,23 +119,18 @@ def withdraw_amount(
 def view_details(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
     userservice = get_user_service(db)
     details = userservice.user_view_details(user_id)
-    response = UserViewDetailsModel(**vars(details))
     logger.info(f"User details viewed by customer with ID: {user_id}.")
-    return response
+    return details
 
 
 # view transactions
 @router.get(
     "/transactions/",
-    response_model=list[UserTransactionDetailsModel],
+    response_model= Page[UserTransactionDetailsModel],
     tags=["user_view_transactions"],
     status_code=200,
 )
 def view_transactions(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
     userservice = get_user_service(db)
-    transactions = userservice.user_view_transactions(user_id)
-    response = [
-        UserTransactionDetailsModel(**vars(transaction)) for transaction in transactions
-    ]
     logger.info(f"Transaction details viewed by customer with ID: {user_id}")
-    return response
+    return userservice.user_view_transactions(user_id)

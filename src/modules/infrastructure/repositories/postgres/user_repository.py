@@ -1,5 +1,6 @@
 from sqlite3 import Row
-from typing import Optional
+from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination import Page
 from src.entrypoints.api.mappers.user_mapper import *
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
@@ -87,7 +88,7 @@ class UserPostgresRepository(UserRepository):
             account_entity = orm_to_bankaccount_entity(account)
             return account_entity
 
-    def get_detail(self, id: str) -> UserViewDetails | None:
+    def get_detail(self, id: str) -> UserViewDetailsModel | None:
         user_details = (
             self._session.execute(
                 select(
@@ -108,25 +109,12 @@ class UserPostgresRepository(UserRepository):
             .mappings()
             .fetchone()
         )
-        return UserViewDetails(**user_details) if user_details else None
+        return UserViewDetailsModel(**user_details) if user_details else None
 
-    def get_transactions(self, id: str) -> list[UserTransactionDetails] | None:
+
+    def get_transactions(self, id: str) -> Page[UserTransactionDetailsModel] :
         bank_acc_id = self._session.execute(
             select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
         ).scalar()
-        if not bank_acc_id:
-            return None
-        stmt = select(
-            TransactionsSchema.transaction_id,
-            TransactionsSchema.bank_acc_id,
-            TransactionsSchema.transaction_type,
-            TransactionsSchema.amount,
-            TransactionsSchema.previous_balance,
-            TransactionsSchema.new_balance,
-            TransactionsSchema.timestamp,
-        ).where(TransactionsSchema.bank_acc_id == bank_acc_id)
-        transactions = self._session.execute(stmt).mappings().all()
-        transactions_list = [
-            UserTransactionDetails(**transaction) for transaction in transactions
-        ]
-        return transactions_list
+        query = select(TransactionsSchema).where(TransactionsSchema.bank_acc_id == bank_acc_id)
+        return paginate(self._session, query)
