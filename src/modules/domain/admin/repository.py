@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from fastapi_pagination import Page
 from pydantic import SecretStr
 from src.entrypoints.api.admin.models import AdminLoginModel
 from src.entrypoints.api.admin.responses import *
@@ -22,20 +23,16 @@ class AdminRepository(ABC):
     @abstractmethod
     def get_admin_by_id(self, id: str) -> Admin | None: ...
 
-    # @abstractmethod
-    # def get_details(self) -> list[AdminViewDetails] | None: ...
-
     @abstractmethod
-    def get_details(self) :
-        ...
+    def get_details(self) -> Page[AdminViewDetailsModel]: ...
 
     @abstractmethod
     def get_specific_user_detail(self, id: str) -> AdminViewDetails | None: ...
 
     @abstractmethod
-    def get_transactions(self) -> list[AdminTransactionDetails] | None: ...
+    def get_transactions(self) -> Page[AdminTransactionDetails] : ...
 
     @abstractmethod
     def get_specific_transactions(
         self, id: str
-    ) -> list[AdminTransactionDetails] | None: ...
+    ) -> Page[AdminTransactionDetails]: ...

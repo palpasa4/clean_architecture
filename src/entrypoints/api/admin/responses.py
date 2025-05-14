@@ -1,5 +1,6 @@
 from datetime import datetime
 from email import message
+from fastapi_pagination import Page
 from pydantic import BaseModel, SecretStr
 
 
@@ -20,6 +21,10 @@ class AdminViewDetailsModel(BaseModel):
     contact_no: str
     created_at: datetime
     updated_at: datetime
+
+
+class Details(BaseModel):
+    details: Page[AdminViewDetailsModel] | AdminViewDetailsModel
 
 
 class AdminTransactionDetailsModel(BaseModel):

@@ -1,5 +1,5 @@
 import uuid
-from fastapi_pagination import paginate
+from fastapi_pagination import Page, paginate
 from yaml import StreamStartEvent
 from src.entrypoints.api import admin, user
 from src.entrypoints.api.admin.responses import *
@@ -84,29 +84,16 @@ class AdminService:
                 message="Database error!", status_code=500
             )
 
-    # def view_details_by_admin(self) -> list[AdminViewDetails]:
-    #     try:
-    #         users_list = self.admin_repository.get_details()
-    #         if not users_list:
-    #             logger.error("Database Exception: No details found!")
-    #             raise DetailNotFoundException(
-    #                 message="No details found!", status_code=404
-    #             )
-    #         return users_list
-    #     except DetailNotFoundException:
-    #         raise
-    #     except Exception as e:
-    #         logger.error(
-    #             f"[Admin Access] Database error while retrieving user details: {str(e)}"
-    #         )
-    #         raise AdminDatabaseOperationError(
-    #             message="Database error while retrieving user details.", status_code=500
-    #         )
 
-
-    def view_details_by_admin(self):
+    def view_details_by_admin(self) -> Page[AdminViewDetailsModel]:
         try:
-            return self.admin_repository.get_details()
+            details =  self.admin_repository.get_details()
+            if not details.items:
+                logger.error("No details found.")
+                raise DetailNotFoundException(message = "No details found.", status_code=404)
+            return details
+        except DetailNotFoundException:
+            raise
         except Exception as e:
             logger.error(
                 f"[Admin Access] Database error while retrieving user details: {str(e)}"
@@ -135,15 +122,16 @@ class AdminService:
                 message="Database error while retrieving user details.", status_code=500
             )
 
-    def view_transactions_by_admin(self) -> list[AdminTransactionDetails]:
+
+    def view_transactions_by_admin(self) -> Page[AdminTransactionDetails]:
         try:
-            transaction_list = self.admin_repository.get_transactions()
-            if not transaction_list:
+            transactions = self.admin_repository.get_transactions()
+            if not transactions.items:
                 logger.error("Database Error: No transactions found. ")
                 raise TransactionsNotFoundException(
                     message="No transactions found!", status_code=404
                 )
-            return transaction_list
+            return transactions
         except TransactionsNotFoundException:
             raise
         except Exception as e:
@@ -157,11 +145,11 @@ class AdminService:
 
     def view_specific_transactions_by_admin(
         self, id: str
-    ) -> list[AdminTransactionDetails]:
+    ) -> Page[AdminTransactionDetails]:
         try:
             transactions = self.admin_repository.get_specific_transactions(id)
 
-            if not transactions:
+            if not transactions.items:
                 logger.error(
                     f"DatabaseException: No transactions found for user with ID: {id}."
                 )

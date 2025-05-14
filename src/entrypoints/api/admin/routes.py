@@ -52,74 +52,55 @@ def admin_login(
 
 
 @router.get(
-    "/details/",
-    response_model=Page[AdminViewDetailsModel],
+    "/view-user-details/",
+    response_model= Page[AdminViewDetailsModel],
     tags=["admin_view_details"],
     status_code=200,
 )
-def view_details(
+def view_user_details(
     admin_id: AnnotatedValidAdminID,
-    db: AnnotatedDatabaseSession,
-    id: str = Query(default=None)
+    db: AnnotatedDatabaseSession
 ):
     admin_service = get_admin_service(db)
-    if not id:
-        return admin_service.view_details_by_admin()
-    
-    
-# # view all or specific user's details
-# @router.get(
-#     "/details/",
-#     response_model=list[AdminViewDetailsModel] | AdminViewDetailsModel,
-#     tags=["admin_view_details"],
-#     status_code=200,
-# )
-# def view_details(
-#     admin_id: AnnotatedValidAdminID,  # _:AnnotatedCheckAdmin -> if the parameter is used no where
-#     db: AnnotatedDatabaseSession,
-#     id: str = Query(default=None)
-# ):
-#     admin_service = get_admin_service(db)
-#     if not id:
-#         details = admin_service.view_details_by_admin()
-#         response = [AdminViewDetailsModel(**vars(detail)) for detail in details]
-#         logger.info(f"All user details viewed by admin with ID: {admin_id}")
-#         return response
-#     details = admin_service.view_specific_detail_by_admin(id)
-#     response = AdminViewDetailsModel(**vars(details))
-#     logger.info(
-#         f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
-#     )
-#     return response
+    logger.info(f"All user details viewed by admin with ID: {admin_id}")
+    return admin_service.view_details_by_admin()
 
 
-# view all or specific user's transaction details.
 @router.get(
-    "/transactions/",
-    response_model=list[AdminTransactionDetailsModel] | AdminTransactionDetailsModel,
+    "/view-specific-user-details/",
+    response_model= AdminViewDetailsModel,
+    tags=["admin_view_details"],
+    status_code=200,
 )
-def view_transactions(
+def view_specific_user_details(
     admin_id: AnnotatedValidAdminID,
     db: AnnotatedDatabaseSession,
-    id: str = Query(default=None),
+    id: str 
+):
+    admin_service = get_admin_service(db)
+    details = admin_service.view_specific_detail_by_admin(id)
+    response = AdminViewDetailsModel(**vars(details))
+    logger.info(
+        f"Details of customer with ID: {id} viewed by admin with ID: {admin_id}"
+    )
+    return response
+
+
+@router.get(
+    "/view-user-transactions/",
+    response_model=Page[AdminTransactionDetailsModel],
+)
+def view_user_transactions(
+    admin_id: AnnotatedValidAdminID,
+    db: AnnotatedDatabaseSession,
+    id: str= Query(default=None)
 ):
     adminservice = get_admin_service(db)
-    adminservice.check_ifadmin(admin_id)
     if not id:
-        transactions = adminservice.view_transactions_by_admin()
-        response = [
-            AdminTransactionDetailsModel(**vars(transaction))
-            for transaction in transactions
-        ]
         logger.info(f"Transactions viewed by admin with ID: {admin_id}")
-        return response
+        return adminservice.view_transactions_by_admin()
     transactions = adminservice.view_specific_transactions_by_admin(id)
-    if transactions:
-        response = [
-            AdminTransactionDetailsModel(**vars(transaction))
-            for transaction in transactions
-        ]
-        logger.info(
-            f"Transactions of Customer with Customer ID {id} viewed by admin with ID {admin_id}"
-        )
-        return response
+    logger.info(
+        f"Transactions of Customer with Customer ID {id} viewed by admin with ID {admin_id}"
+    )
+    return transactions

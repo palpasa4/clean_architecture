@@ -1,3 +1,4 @@
+from fastapi_pagination import Page
 from sqlalchemy import select
 from src.entrypoints.api.admin.responses import *
 from src.entrypoints.api.mappers.admin_mapper import orm_to_admin_entity
@@ -68,25 +69,8 @@ class AdminPostgresRepository(AdminRepository):
             account_entity = orm_to_bankaccount_entity(account)
             return account_entity
 
-    # def get_details(self) -> list[AdminViewDetails] | None:
-    #     details = self._session.execute(
-    #         select(
-    #             UserSchema.cust_id,
-    #             UserSchema.username,
-    #             BankAccountSchema.bank_acc_id,
-    #             BankAccountSchema.fullname,
-    #             BankAccountSchema.address,
-    #             BankAccountSchema.contact_no,
-    #             BankAccountSchema.created_at,
-    #             BankAccountSchema.updated_at,
-    #         ).outerjoin(
-    #             BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id
-    #         )
-    #     ).fetchall()
-    #     users_list = [AdminViewDetails(**dict(detail._mapping)) for detail in details]
-    #     return users_list
 
-    def get_details(self):
+    def get_details(self) -> Page[AdminViewDetailsModel]:
         query = select(
             UserSchema.cust_id,
             UserSchema.username,
@@ -99,7 +83,6 @@ class AdminPostgresRepository(AdminRepository):
         ).outerjoin(
             BankAccountSchema, UserSchema.cust_id == BankAccountSchema.cust_id
         )
-
         return paginate(self._session, query)
 
     def get_specific_user_detail(self, id: str) -> AdminViewDetails | None:
@@ -122,41 +105,27 @@ class AdminPostgresRepository(AdminRepository):
         if details:
             return AdminViewDetails(**dict(details._mapping))
 
-    def get_transactions(self) -> list[AdminTransactionDetails] | None:
-        transactions = (
-            self._session.execute(
-                select(
-                    TransactionsSchema.transaction_id,
-                    TransactionsSchema.bank_acc_id,
-                    TransactionsSchema.transaction_type,
-                    TransactionsSchema.amount,
-                    TransactionsSchema.timestamp,
-                )
-            )
-            .mappings()
-            .all()
-        )
-        transaction_list = [
-            AdminTransactionDetails(**transaction) for transaction in transactions
-        ]
-        return transaction_list
-
-    def get_specific_transactions(
-        self, id: str
-    ) -> list[AdminTransactionDetails] | None:
-        bank_acc_id = self._session.execute(
-            select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
-        ).scalar()
-        stmt = select(
+    def get_transactions(self) -> Page[AdminTransactionDetails] :
+        query = select(
             TransactionsSchema.transaction_id,
             TransactionsSchema.bank_acc_id,
             TransactionsSchema.transaction_type,
             TransactionsSchema.amount,
             TransactionsSchema.timestamp,
-        ).where(TransactionsSchema.bank_acc_id == bank_acc_id)
-        transactions = self._session.execute(stmt).mappings().all()
-        if transactions:
-            transaction_list = [
-                AdminTransactionDetails(**transaction) for transaction in transactions
-            ]
-            return transaction_list
+        ).select_from(TransactionsSchema)
+        return paginate(self._session, query)
+
+    def get_specific_transactions(
+        self, id: str
+    ) -> Page[AdminTransactionDetails] :
+        bank_acc_id = self._session.execute(
+            select(BankAccountSchema.bank_acc_id).where(BankAccountSchema.cust_id == id)
+        ).scalar()
+        query = select(
+            TransactionsSchema.transaction_id,
+            TransactionsSchema.bank_acc_id,
+            TransactionsSchema.transaction_type,
+            TransactionsSchema.amount,
+            TransactionsSchema.timestamp,
+        ).select_from(TransactionsSchema).where(TransactionsSchema.bank_acc_id == bank_acc_id)
+        return paginate(self._session, query)
