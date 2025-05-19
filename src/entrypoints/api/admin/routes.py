@@ -15,7 +15,7 @@ from src.modules.infrastructure.logging.logconfig import logger
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-# create admin
+# create admin 
 @router.post(
     "/create-admin",
     response_model=AdminResponseModel,
