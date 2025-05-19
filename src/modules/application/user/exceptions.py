@@ -1,4 +1,4 @@
-from src.entrypoints.api.handlers.exceptions import *
+from src.core.handlers.exceptions import *
 
 
 class DuplicateUserException(DuplicateResourceException): ...

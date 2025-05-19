@@ -1,7 +1,7 @@
 import hashlib, uuid
 from src.entrypoints.api.user.models import AmountModel, CreateUserModel
 from src.modules.domain.user.entity import BankAccount, Transactions, User
-from src.modules.infrastructure.auth.password_utils import hash_password
+from src.modules.infrastructure.auth.helpers import hash_password
 from src.modules.infrastructure.persistence.dbschemas.user import BankAccountSchema
 
 

@@ -36,6 +36,6 @@ allow-direct-references = true
 packages = ["src/bank_sys_cleanarch"]
 
 [tool.rye.scripts]
-server="fastapi dev src/entrypoints/api/main.py"
+server="fastapi dev src/main.py"
 create-superuser = "python ./src/entrypoints/cli/superuser.py"
 database-setup = "python src/entrypoints/cli/dbsetup.py"

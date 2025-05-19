@@ -1,21 +1,18 @@
 import hashlib, uuid
-
 from fastapi_pagination import Page
 from src.entrypoints.api.user.models import *
 from src.entrypoints.api.user.responses import *
 from src.modules.domain.user.entity import (
     BankAccount,
-    BankAccount,
     Transactions,
     User,
 )
 from src.modules.domain.user.repository import UserRepository
-from src.modules.infrastructure.auth.password_utils import hash_password
-from src.modules.infrastructure.logging.logconfig import logger
-from src.entrypoints.api.user.exceptions import *
+from src.modules.infrastructure.auth.helpers import hash_password, check_password
+from src.core.logging.logconfig import logger
+from src.modules.application.user.exceptions import *
 from sqlalchemy.orm import Session
 from src.entrypoints.api.user.models import *
-from src.modules.infrastructure.auth.password_utils import check_password
 from src.modules.infrastructure.repositories.postgres.user_repository import (
     UserPostgresRepository,
 )

@@ -1,4 +1,4 @@
-from src.entrypoints.api.handlers.middleware import *
+from src.core.handlers.middleware import *
 
 
 class BaseApiException(Exception):

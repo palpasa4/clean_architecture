@@ -19,8 +19,3 @@ class ListUserParams(BaseModel):
     page_number: int | None = None
     page_size: int | None = None
     user_id: str | None = None
-
-
-# class Token(BaseModel):
-#     access_token: str
-#     token_type: str

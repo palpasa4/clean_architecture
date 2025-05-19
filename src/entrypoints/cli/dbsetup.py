@@ -1,5 +1,5 @@
-from src.modules.infrastructure.persistence.database import init_db
-from src.modules.infrastructure.persistence.settings import AppSettings
+from src.config.database import init_db
+from src.config.settings import AppSettings
 
 
 def setup_db():

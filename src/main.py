@@ -1,13 +1,13 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from src.modules.infrastructure.persistence.database import init_db
-from src.modules.infrastructure.persistence.settings import AppSettings
+from src.config.database import init_db
+from src.config.settings import AppSettings
 from src.entrypoints.api.admin import routes as admin_routes
 from src.entrypoints.api.user import routes as user_routes
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 from src.modules.infrastructure.persistence.dbschemas.user import *
-from src.modules.infrastructure.persistence.database import get_db_session
-from src.entrypoints.api.handlers.middleware import CustomExceptionMiddleware
+from src.config.database import get_db_session
+from src.core.handlers.middleware import CustomExceptionMiddleware
 from fastapi_pagination import add_pagination
 
 

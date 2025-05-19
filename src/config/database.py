@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base
-from src.modules.infrastructure.persistence.settings import DatabaseSettings
+from src.config.settings import DatabaseSettings
 
 
 # private varialbe, do not import

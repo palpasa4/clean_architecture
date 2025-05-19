@@ -2,8 +2,8 @@ from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from httpx import request
 import jwt
-from src.modules.infrastructure.logging.logconfig import logger
-from src.modules.infrastructure.persistence.settings import DefaultSettings
+from src.core.logging.logconfig import logger
+from src.config.settings import DefaultSettings
 from .auth_handler import decode_jwt
 from typing import Optional
 

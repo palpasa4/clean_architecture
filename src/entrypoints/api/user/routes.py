@@ -5,10 +5,10 @@ from src.entrypoints.api.user.responses import *
 from src.entrypoints.api.dependencies import *
 from src.modules.infrastructure.repositories.postgres.user_repository import *
 from src.modules.infrastructure.repositories.postgres.admin_repository import *
-from src.modules.application.user_services import UserService
-from src.modules.application.admin_services import AdminService
+from src.modules.application.user.services import UserService
+from src.modules.application.admin.services import AdminService
 from src.modules.infrastructure.auth.auth_bearer import JWTBearer
-from src.modules.infrastructure.logging.logconfig import logger
+from src.core.logging.logconfig import logger
 from src.modules.infrastructure.auth.auth_handler import sign_jwt
 
 

@@ -1,10 +1,10 @@
 from src.modules.infrastructure.auth.auth_bearer import JWTBearer
-from src.modules.infrastructure.persistence.database import get_db_session
+from src.config.database import get_db_session
 from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
-from src.modules.infrastructure.persistence.settings import DefaultSettings
+from src.config.settings import DefaultSettings
 from src.modules.infrastructure.repositories.postgres.admin_repository import (
     AdminPostgresRepository,
 )
@@ -18,14 +18,14 @@ def get_default_settings(request: Request) -> DefaultSettings:
 
 
 def get_admin_service(db: Session):
-    from src.modules.application.admin_services import AdminService
+    from src.modules.application.admin.services import AdminService
 
     repo = AdminPostgresRepository(db)
     return AdminService(repo)
 
 
 def get_user_service(db: Session):
-    from src.modules.application.user_services import UserService
+    from src.modules.application.user.services import UserService
 
     repo = UserPostgresRepository(db)
     return UserService(repo)

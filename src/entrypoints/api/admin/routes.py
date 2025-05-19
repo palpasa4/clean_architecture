@@ -1,8 +1,7 @@
-from email.policy import default
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi_pagination import Page
 from src.entrypoints.api.mappers.admin_mapper import model_to_admin_entity
-from src.modules.application.admin_services import AdminService
+from src.modules.application.admin.services import AdminService
 from src.modules.domain.admin.entity import *
 from src.modules.infrastructure.repositories.postgres.admin_repository import *
 from src.entrypoints.api.dependencies import *
@@ -10,7 +9,7 @@ from src.entrypoints.api.admin.models import *
 from src.entrypoints.api.admin.responses import *
 from src.modules.infrastructure.auth.auth_handler import sign_jwt
 from src.modules.infrastructure.auth.auth_bearer import JWTBearer
-from src.modules.infrastructure.logging.logconfig import logger
+from src.core.logging.logconfig import logger
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -23,7 +22,8 @@ router = APIRouter(prefix="/admin", tags=["admin"])
     tags=["create_admin"],
     status_code=200,
 )
-def create_admin(model: CreateAdminModel, db: AnnotatedDatabaseSession):
+def create_admin(model: CreateAdminModel, db: AnnotatedDatabaseSession,):
+
     adminservice = get_admin_service(db)
     admin_entity = model_to_admin_entity(model)
     adminservice.create_admin_handler(admin_entity)

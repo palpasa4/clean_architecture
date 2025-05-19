@@ -1,5 +1,5 @@
-from src.entrypoints.api.handlers.middleware import *
-from src.entrypoints.api.handlers.exceptions import *
+from src.core.handlers.middleware import *
+from src.core.handlers.exceptions import *
 
 
 class DuplicateAdminException(DuplicateResourceException): ...
