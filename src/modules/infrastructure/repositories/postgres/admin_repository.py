@@ -30,10 +30,20 @@ class AdminPostgresRepository(AdminRepository):
         self._session.add(user)
         self._session.commit()
 
-    def check_duplicate_admin(self, entity: Admin) -> Admin | None:
+    def check_duplicate_username(self, entity: Admin) -> Admin | None:
         admin = (
             self._session.query(AdminSchema)
             .filter(AdminSchema.username == entity.username)
+            .first()
+        )
+        if admin:
+            admin_entity = orm_to_admin_entity(admin.__dict__)
+            return admin_entity
+        
+    def check_duplicate_email(self, entity: Admin) -> Admin | None:
+        admin = (
+            self._session.query(AdminSchema)
+            .filter(AdminSchema.email == entity.email)
             .first()
         )
         if admin:

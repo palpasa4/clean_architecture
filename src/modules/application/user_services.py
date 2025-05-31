@@ -8,9 +8,9 @@ from src.modules.domain.user.entity import (
     User,
 )
 from src.modules.domain.user.repository import UserRepository
-from src.modules.infrastructure.auth.helpers import hash_password, check_password
+from src.core.auth.helpers import hash_password, check_password
 from src.core.logging.logconfig import logger
-from src.modules.application.user.exceptions import *
+from src.modules.domain.user.exceptions import *
 from sqlalchemy.orm import Session
 from src.entrypoints.api.user.models import *
 from src.modules.infrastructure.repositories.postgres.user_repository import (

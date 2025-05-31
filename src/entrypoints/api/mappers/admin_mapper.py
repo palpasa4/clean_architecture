@@ -1,7 +1,7 @@
 import uuid
 from src.entrypoints.api.admin.models import *
 from src.modules.domain.admin.entity import *
-from src.modules.infrastructure.auth.helpers import hash_password
+from src.core.auth.helpers import hash_password
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 
 

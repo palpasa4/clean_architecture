@@ -3,7 +3,7 @@ from src.modules.infrastructure.persistence.dbschemas.user import UserSchema
 from src.modules.infrastructure.persistence.dbschemas.admin import AdminSchema
 from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
-from src.config.database import get_db_session
+from src.config.postgresdb import get_db_session
 
 
 # For successful login

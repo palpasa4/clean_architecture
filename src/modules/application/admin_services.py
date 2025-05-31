@@ -5,12 +5,12 @@ from src.entrypoints.api.admin.responses import *
 from src.modules.domain.admin.repository import AdminRepository
 from sqlalchemy.orm import Session
 from src.entrypoints.api.admin.models import *
-from src.modules.infrastructure.auth.helpers import hash_password, check_password
+from src.core.auth.helpers import hash_password, check_password
 from src.modules.domain.admin.entity import *
-from src.modules.application.admin.exceptions import *
+from src.modules.domain.admin.exceptions import *
 from src.entrypoints.api.dependencies import AnnotatedDatabaseSession
 from src.core.logging.logconfig import logger
-from src.modules.application.user.exceptions import *
+from src.modules.domain.user.exceptions import *
 
 
 class AdminService:
@@ -20,22 +20,67 @@ class AdminService:
         self.admin_repository = admin_repository
 
     def create_admin_handler(self, admin_entity: Admin) -> None:
+        self.check_admin_username(admin_entity)
+        self.check_admin_email(admin_entity)
         try:
-            admin = self.admin_repository.check_duplicate_admin(admin_entity)
-            if admin:
-                logger.error(
-                    f"Duplicate admin creation attempt: username='{admin_entity.username}'"
-                )
-                raise DuplicateAdminException(
-                    message=f"Admin with username '{admin_entity.username}' already exists.",
-                    status_code=409,
-                )
             self.admin_repository.create_admin(admin_entity)
-        except DuplicateAdminException:
-            raise
         except Exception as e:
             logger.error(
                 f"Database Error: Admin creation failed for username='{admin_entity.username}': {str(e)}"
+            )
+            raise AdminDatabaseOperationError(
+                message="Database Error: Unable to create admin.", status_code=500
+            )
+
+    def check_admin_username(self, entity: Admin) -> None:
+        if len(entity.username) < 7:
+            # simple input validation issue
+            logger.warning("Username too short: must be at least 7 characters long")
+            raise UsernameValidationException(
+                message="Username must be at least 7 characters long!", status_code=400
+            )
+        if len(entity.username) > 20:
+            logger.warning("Username too long: cannot be more than 20 characters!")
+            raise UsernameValidationException(
+                message="Username cannot include more than 20 characters!",
+                status_code=400,
+            )
+        try:
+            admin_username = self.admin_repository.check_duplicate_username(entity)
+            if admin_username:
+                logger.error(
+                    f"Duplicate admin creation attempt: username='{entity.username}'"
+                )
+            raise DuplicateUsernameException(
+                message=f"Admin with username '{entity.username}' already exists.",
+                status_code=409,
+            )
+        except DuplicateUsernameException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Database Error: Admin creation failed for username='{entity.username}': {str(e)}"
+            )
+            raise AdminDatabaseOperationError(
+                message="Database Error: Unable to create admin.", status_code=500
+            )
+    
+    def check_admin_email(self, entity: Admin) -> None:
+        try:
+            admin_email = self.admin_repository.check_duplicate_email(entity)
+            if admin_email:
+                logger.error(
+                    f"Duplicate admin creation attempt with email='{entity.email}'"
+                )
+                raise DuplicateEmailException(
+                    message=f"Admin with email '{entity.email}' already exists.",
+                    status_code=409,
+                )
+        except DuplicateEmailException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Database Error: Admin creation failed for username='{entity.username}': {str(e)}"
             )
             raise AdminDatabaseOperationError(
                 message="Database Error: Unable to create admin.", status_code=500

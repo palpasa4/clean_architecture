@@ -5,11 +5,11 @@ from src.entrypoints.api.user.responses import *
 from src.entrypoints.api.dependencies import *
 from src.modules.infrastructure.repositories.postgres.user_repository import *
 from src.modules.infrastructure.repositories.postgres.admin_repository import *
-from src.modules.application.user.services import UserService
-from src.modules.application.admin.services import AdminService
-from src.modules.infrastructure.auth.auth_bearer import JWTBearer
+from src.modules.application.user_services import UserService
+from src.modules.application.admin_services import AdminService
+from src.core.auth.auth_bearer import JWTBearer
 from src.core.logging.logconfig import logger
-from src.modules.infrastructure.auth.auth_handler import sign_jwt
+from src.core.auth.auth_handler import sign_jwt
 
 
 router = APIRouter(prefix="/users", tags=["user"])
@@ -19,7 +19,6 @@ router = APIRouter(prefix="/users", tags=["user"])
 @router.post(
     "/create-user",
     response_model=UserResponseModel,
-    tags=["create_users"],
     status_code=200,
 )
 def create_user_resource(
@@ -43,7 +42,7 @@ def create_user_resource(
 
 # user login
 @router.post(
-    "/login/", response_model=TokenResponseModel, tags=["user_login"], status_code=200
+    "/login/", response_model=TokenResponseModel, status_code=200
 )
 def user_login(
     model: UserLoginModel,
@@ -61,7 +60,6 @@ def user_login(
 @router.post(
     "/deposit/",
     response_model=TransactionResponse,
-    tags=["user_deposit"],
     status_code=200,
 )
 def deposit_amount(
@@ -87,7 +85,6 @@ def deposit_amount(
 @router.post(
     "/withdraw/",
     response_model=TransactionResponse,
-    tags=["user_deposit"],
     status_code=200,
 )
 def withdraw_amount(
@@ -113,7 +110,6 @@ def withdraw_amount(
 @router.get(
     "/details/",
     response_model=UserViewDetailsModel,
-    tags=["user_view_details"],
     status_code=200,
 )
 def view_details(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
@@ -127,7 +123,6 @@ def view_details(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):
 @router.get(
     "/transactions/",
     response_model= Page[UserTransactionDetailsModel],
-    tags=["user_view_transactions"],
     status_code=200,
 )
 def view_transactions(user_id: AnnotatedValidUserID, db: AnnotatedDatabaseSession):

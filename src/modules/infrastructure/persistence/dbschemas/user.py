@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Float, Date
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from src.config.database import Base
+from src.config.postgresdb import Base
 
 
 class UserSchema(Base):

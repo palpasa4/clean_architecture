@@ -1,4 +1,4 @@
-from src.config.database import init_db
+from src.config.postgresdb import init_db
 from src.config.settings import AppSettings
 
 
